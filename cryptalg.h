@@ -8,6 +8,14 @@
 #ifndef CRYPTALG_H_
 #define CRYPTALG_H_
 
+/** _DEBUG
+ * Turn on debugging options through STDOUT
+ */
+#ifndef DEBUG
+#define DEBUG 1
+#endif
+/* _DEBUG */
+
 /**
  * BLOCK_SIZE - Want to read only 2 bytes at a time
  * Assignment spec says to encrypt 2 bytes at a time, so that's the buffer to
@@ -19,34 +27,12 @@
 /* BLOCK_SIZE*/
 /**
  * FEISTEL_ROUNDS
- * Number of rounds for ECB mode. This number is ZERO based (so 7 rounds should
- * cover rounds 0 to 7 for a total of 8 rounds).
+ * Number of rounds for ECB mode. This number is ONE based.
  */
 #ifndef FEISTEL_ROUNDS
 #define FEISTEL_ROUNDS 8
 #endif
 /* FEISTEL_ROUNDS */
-
-/**
- * CPU_ROL
- * Is used to take advantage of some inline assembly on Intel compatible
- * architectures (use CPU opcode ROL to rotate left rather than use a slower
- * (but more portable) implementation in C/C++. If CPU_ROL is not defined during
- * compile time use the C/C++ style implementation.
- */
-#if MSVC
-#ifdef _M_X86
-#define CPU_ROL
-#define CPU_ROR
-#endif
-#endif
-
-#if GCC
-#ifdef __i386__
-#define CPU_ROL
-#define CPU_ROR
-#endif
-#endif
 
 using namespace std;
 
@@ -113,7 +99,7 @@ void help(char* argv[]);
  * @param key
  * @return
  */
-uint8_t keysched(uint8_t round, uint16_t starting_key, uint8_t *key_lut);
+void keysched(uint8_t round, uint8_t *key_lut);
 
 /**
  * main
@@ -144,13 +130,20 @@ uint8_t permute(uint8_t *hi, uint8_t low);
 uint8_t sbox(uint8_t input);
 
 /**
- * Rotate left circular shift operation
+ * Rotate left circular shift operations
  * @param shift amount to rotate by
  * @param input variable to be rotated
  * @return shifted variable leaving original value untouched
  */
 uint8_t rol(uint8_t shift, const uint8_t input);
-uint16_t rol(uint8_t shift, const uint16_t input);
+
+/**
+ * Rotate right circular shift operation
+ * @param shift amount to rotate by
+ * @param input variable to be rotated
+ * @return shifted variable leaving original value untouched
+ */
+uint8_t ror(uint8_t shift, const uint8_t input);
 
 /**
  * _hin
@@ -160,7 +153,6 @@ uint16_t rol(uint8_t shift, const uint16_t input);
  * @return
  */
 uint8_t _hin(uint16_t input, uint8_t bits);
-uint16_t _hin(uint16_t input, uint8_t bits);
 
 /**
  * _lon
@@ -170,7 +162,6 @@ uint16_t _hin(uint16_t input, uint8_t bits);
  * @return
  */
 uint8_t _lon(uint16_t input, uint8_t bits);
-uint16_t _lon(uint16_t input, uint8_t bits);
 
 /**
  * hi8
@@ -203,5 +194,7 @@ uint8_t _hi4(uint8_t input);
  * @return
  */
 uint8_t _lo4(uint8_t input);
+
+bool _init(int argc, char* argv[], fstream &in, ofstream &out);
 
 #endif /* CRYPTALG_H_ */
