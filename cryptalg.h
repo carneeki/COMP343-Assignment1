@@ -48,21 +48,16 @@ using namespace std;
 uint8_t key_lut[FEISTEL_ROUNDS];
 
 /**
+ * mode
+ * Encrypt vs Decrypt operation. Encrypt = 1. Decrypt = 0;
+ */
+bool mode;
+/**
  * starting key
  * This is the key that the user enters in the command line argument to
  * encrypt() / decrypt().
  */
 uint16_t starting_key;
-
-/**
- * Main decrypt function.
- * Wrapper for all decryption operations.
- * @param infile reference to the input file handle
- * @param outfile reference to the output file handle
- * @param key the key to decrypt with
- * @return 0 on success, 1 on fail
- */
-int decrypt(fstream& infile, ofstream& outfile, uint16_t key);
 
 /**
  * Main encrypt function.
@@ -72,7 +67,7 @@ int decrypt(fstream& infile, ofstream& outfile, uint16_t key);
  * @param key the key to encrypt with
  * @return 0 on success, 1 on fail
  */
-int encrypt(fstream& infile, ofstream& outfile, uint16_t key);
+int encrypt(fstream& infile, ofstream& outfile);
 
 /**
  * Feistel Round
@@ -82,7 +77,7 @@ int encrypt(fstream& infile, ofstream& outfile, uint16_t key);
  * @param left
  * @param right
  */
-void feistel_round(uint8_t round_num, uint8_t *left, uint8_t *right);
+void feistel_round(uint8_t round, uint8_t *buf);
 
 /**
  * help
@@ -91,6 +86,13 @@ void feistel_round(uint8_t round_num, uint8_t *left, uint8_t *right);
  * @param argv
  */
 void help(char* argv[]);
+
+/**
+ * keyreverse
+ * Reverse the key schedule for decryption
+ * @param key_lut
+ */
+void keyreverse();
 
 /**
  * keysched
@@ -118,7 +120,7 @@ int main(int argc, char* argv[]);
  * @param uint8_t *lo lo order nibble
  * @return uint8_t permuted byte
  */
-uint8_t permute(uint8_t *hi, uint8_t low);
+uint8_t permute(uint8_t hi, uint8_t lo);
 
 /**
  * sbox
@@ -144,24 +146,6 @@ uint8_t rol(uint8_t shift, const uint8_t input);
  * @return shifted variable leaving original value untouched
  */
 uint8_t ror(uint8_t shift, const uint8_t input);
-
-/**
- * _hin
- * Extract n high order bits from integer
- * @param input
- * @param bits
- * @return
- */
-uint8_t _hin(uint16_t input, uint8_t bits);
-
-/**
- * _lon
- * Extract n low order bits from integer
- * @param input
- * @param bits
- * @return
- */
-uint8_t _lon(uint16_t input, uint8_t bits);
 
 /**
  * hi8
