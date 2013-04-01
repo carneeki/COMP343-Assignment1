@@ -2,8 +2,8 @@
 
 TIMEFORMAT='%3R'
 
-MODE=Release
-PROGNAME=cryptalg
+MODE="Release"
+PROGNAME="cryptalg"
 KEY="0xCAFE"
 
 make-big()
@@ -15,7 +15,6 @@ big()
 {
   PREFIX=big
   POSTFIX=dd
-  md5sum big.*
 }
 
 payload()
@@ -24,10 +23,16 @@ payload()
   POSTFIX="jpg"
 }
 
+small()
+{
+  PREFIX="small"
+  POSTFIX="txt"
+}
+
 do-test()
 {
   time ../$MODE/$PROGNAME $PREFIX.clear.$POSTFIX $PREFIX.crypt.$POSTFIX $KEY E
-  time ../$MODE/$PROGNAME $PREFIX.crypt.$POSTFIX $PREFIX.clear2.$POSTFIX $KEY E
+  time ../$MODE/$PROGNAME $PREFIX.crypt.$POSTFIX $PREFIX.clear2.$POSTFIX $KEY D
 }
 
 md5()
@@ -46,6 +51,11 @@ case $1 in
   ;;
   "payload" )
     payload
+    do-test
+    md5
+  ;;
+  "small" )
+    small
     do-test
     md5
   ;;
