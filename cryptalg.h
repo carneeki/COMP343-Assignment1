@@ -12,7 +12,7 @@
  * Turn on debugging options through STDOUT
  */
 #ifndef DEBUG
-#define DEBUG 1
+#define DEBUG 0
 #endif
 /* _DEBUG */
 
