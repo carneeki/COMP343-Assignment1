@@ -13,51 +13,11 @@
 #include <bitset>
 #endif
 
+/*
+ * Please read the function prototypes in cryptalg.h for descriptions of each
+ * function.
+ */
 #include "cryptalg.h"
-
-int encrypt(fstream& in, ofstream& out)
-{
-#if DEBUG
-  fprintf(stdout, "encrypt(): starting\n");
-#endif
-
-  uint8_t buf[BLOCK_SIZE]; // buffer to put input block
-  unsigned long cur_block; // current buffer iterator
-
-  cur_block = 0;
-  while (in.read((char*) &buf, BLOCK_SIZE))
-  {
-
-#if DEBUG
-    fprintf(stderr, "encrypt(): in  block[0x%04lx] 0x%02x%02x", cur_block,
-        buf[0], buf[1]);
-    bitset<8> l_in(buf[0]);
-    bitset<8> r_in(buf[1]);
-    cout << " " << l_in << " : " << r_in << endl;
-#endif
-
-    feistel_round(0, buf);
-    out.write((char*) &buf, BLOCK_SIZE);
-
-#if DEBUG
-    fprintf(stderr, "encrypt(): out block[0x%04lx] 0x%02x%02x\n", cur_block,
-        buf[0], buf[1]);
-    bitset<8> l_out(buf[0]);
-    bitset<8> r_out(buf[1]);
-    cout << " " << l_out << " : " << r_out << endl;
-#endif
-
-    cur_block++;
-  }
-
-#if DEBUG
-  fprintf(stdout, "encrypt(): ending\n");
-#endif
-
-  in.close();
-  out.close();
-  return 0;
-}
 
 void feistel_round(uint8_t round, uint8_t *buf)
 {
@@ -273,18 +233,49 @@ int main(int argc, char* argv[])
   fstream in;   // input file stream
   ofstream out; // output file stream
 
-  if ((mode = _init(argc, argv, in, out)))
-  {
-    // encrypt
-    return encrypt(in, out);
-  }
-  else
+  uint8_t buf[BLOCK_SIZE]; // buffer to put input block
+  unsigned long cur_block; // current buffer iterator
+  cur_block = 0;
+
+  mode = _init(argc, argv, in, out);
+  if (!mode)
   {
     // decrypt
     keyreverse();
-
-    return encrypt(in, out);
   }
+
+  while (in.read((char*) &buf, BLOCK_SIZE))
+  {
+
+#if DEBUG
+    fprintf(stderr, "main(): in  block[0x%04lx] 0x%02x%02x", cur_block, buf[0],
+        buf[1]);
+    bitset<8> l_in(buf[0]);
+    bitset<8> r_in(buf[1]);
+    cout << " " << l_in << " : " << r_in << endl;
+#endif
+
+    feistel_round(0, buf);
+    out.write((char*) &buf, BLOCK_SIZE);
+
+#if DEBUG
+    fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x\n", cur_block,
+        buf[0], buf[1]);
+    bitset<8> l_out(buf[0]);
+    bitset<8> r_out(buf[1]);
+    cout << " " << l_out << " : " << r_out << endl;
+#endif
+
+    cur_block++;
+  }
+
+  in.close();
+  out.close();
+
+#if DEBUG
+  fprintf(stdout, "main(): ending\n");
+#endif
+  return 0;
 }
 
 uint8_t permute(uint8_t hi, uint8_t lo)
@@ -321,15 +312,15 @@ uint8_t sbox(uint8_t input)
   fprintf(stdout, "sbox(0x%x): ", input);
 #endif
 
-  uint8_t the_sbox[16] =
+  uint8_t lut[16] =
   { 0, 1, 11, 13, 9, 14, 6, 7, 12, 5, 8, 3, 15, 2, 4, 10 };
 
 #if DEBUG
-  bitset<8> bSbox(the_sbox[input]);
+  bitset<8> bSbox(lut[input]);
   cout << bSbox << endl;
 #endif
 
-  return the_sbox[input];
+  return lut[input];
 }
 
 uint8_t rol(uint8_t shift, const uint8_t input)

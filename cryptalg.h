@@ -71,8 +71,8 @@ int encrypt(fstream& infile, ofstream& outfile);
 
 /**
  * Feistel Round
- * Perform a round of the cipher as depicted in the Feistel network from the
- * assignment.
+ * Perform all rounds of the cipher as depicted in the Feistel network from the
+ * assignment. This is a recursive algorithm.
  * @param round_num
  * @param left
  * @param right
