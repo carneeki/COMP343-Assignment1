@@ -8,13 +8,25 @@
 #ifndef CRYPTALG_H_
 #define CRYPTALG_H_
 
-/** _DEBUG
- * Turn on debugging options through STDOUT
+/** DEBUG
+ * Turn on debugging options through STDOUT. Debug can be turned on at compile
+ * time through "gcc -DDEBUG=1 ..." or by changing the variable below to 1.
  */
 #ifndef DEBUG
 #define DEBUG 0
 #endif
-/* _DEBUG */
+/* DEBUG */
+
+/** _D()
+ * A preprocessor function to place debugging code in. This code is not included
+ * in release binaries, but debug binaries will be substantially large, slow and
+ * inefficient.
+ */
+#if DEBUG
+#define _D(code) code;
+#else
+#define _D(code) ;
+#endif
 
 /**
  * BLOCK_SIZE - Want to read only 2 bytes at a time
@@ -77,7 +89,7 @@ int encrypt(fstream& infile, ofstream& outfile);
  * @param left
  * @param right
  */
-void feistel_round(uint8_t round, uint8_t *buf);
+void feistel_round(uint8_t round, uint8_t &Li, uint8_t &Ri);
 
 /**
  * help

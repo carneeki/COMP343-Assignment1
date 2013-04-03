@@ -8,7 +8,14 @@ KEY="0xCAFE"
 
 make-big()
 {
-  dd if=/dev/urandom of=big.clear.dd bs=4M count=256
+  big
+  dd if=/dev/urandom of=$PREFIX.clear.$POSTFIX bs=4M count=256
+}
+
+make-small()
+{
+  small
+  echo -n "ADAM" > $PREFIX.clear.$POSTFIX
 }
 
 big()
@@ -20,6 +27,12 @@ big()
 clean()
 {
   rm -rf *clear2*
+  rm -rf *crypt*
+}
+
+purge()
+{
+  rm -rf *clear*
   rm -rf *crypt*
 }
 
@@ -50,6 +63,9 @@ case $1 in
   "make-big" )
     make-big
   ;;
+  "make-small" )
+    make-small
+  ;;
   "big" )
     big
     do-test
@@ -62,6 +78,9 @@ case $1 in
     payload
     do-test
     md5
+  ;;
+  "purge" )
+    purge
   ;;
   "small" )
     small

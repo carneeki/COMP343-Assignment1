@@ -14,7 +14,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.exe.debug.1395615670" name="Debug" parent="cdt.managedbuild.config.gnu.exe.debug">
+				<configuration artifactName="cryptalg" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.exe.debug.1395615670" name="Debug" parent="cdt.managedbuild.config.gnu.exe.debug">
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.1395615670." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.debug.436517902" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.exe.debug">
 							<targetPlatform id="cdt.managedbuild.target.gnu.platform.exe.debug.1200370787" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.debug"/>
@@ -62,7 +62,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.exe.release.1886244806" name="Release" parent="cdt.managedbuild.config.gnu.exe.release">
+				<configuration artifactName="cryptalg" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.exe.release.1886244806" name="Release" parent="cdt.managedbuild.config.gnu.exe.release">
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.release.1886244806." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.release.1720605173" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.exe.release">
 							<targetPlatform id="cdt.managedbuild.target.gnu.platform.exe.release.1076281654" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.release"/>
@@ -115,9 +115,19 @@
 			<path value=""/>
 		</doc-comment-owner>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1395615670;cdt.managedbuild.config.gnu.exe.debug.1395615670.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1020322826;cdt.managedbuild.tool.gnu.cpp.compiler.input.1782828339">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1886244806;cdt.managedbuild.config.gnu.exe.release.1886244806.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.174953106;cdt.managedbuild.tool.gnu.cpp.compiler.input.1592387333">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1886244806.1832656949;cdt.managedbuild.config.gnu.exe.release.1886244806.1832656949.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1107590996;cdt.managedbuild.tool.gnu.c.compiler.input.1054790121">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1886244806;cdt.managedbuild.config.gnu.exe.release.1886244806.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1971347596;cdt.managedbuild.tool.gnu.c.compiler.input.1643255942">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1395615670;cdt.managedbuild.config.gnu.exe.debug.1395615670.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.564020894;cdt.managedbuild.tool.gnu.c.compiler.input.624629188">
@@ -126,15 +136,5 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1886244806.1832656949;cdt.managedbuild.config.gnu.exe.release.1886244806.1832656949.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1456264084;cdt.managedbuild.tool.gnu.cpp.compiler.input.1443580508">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1886244806;cdt.managedbuild.config.gnu.exe.release.1886244806.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.174953106;cdt.managedbuild.tool.gnu.cpp.compiler.input.1592387333">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1395615670;cdt.managedbuild.config.gnu.exe.debug.1395615670.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1020322826;cdt.managedbuild.tool.gnu.cpp.compiler.input.1782828339">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.1886244806;cdt.managedbuild.config.gnu.exe.release.1886244806.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1971347596;cdt.managedbuild.tool.gnu.c.compiler.input.1643255942">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>
