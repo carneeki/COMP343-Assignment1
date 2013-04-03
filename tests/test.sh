@@ -17,6 +17,12 @@ big()
   POSTFIX=dd
 }
 
+clean()
+{
+  rm -rf *clear2*
+  rm -rf *crypt*
+}
+
 payload()
 {
   PREFIX="payload"
@@ -48,6 +54,9 @@ case $1 in
     big
     do-test
     md5
+  ;;
+  "clean" )
+    clean
   ;;
   "payload" )
     payload
