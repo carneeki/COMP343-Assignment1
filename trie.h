@@ -15,96 +15,172 @@
 #ifndef TRIE_H_
 #define TRIE_H_
 
-#include <iostream>
+#define TRIE_NULL_PTR 0
+#define TRIE_HASH_COLLISION 1
 
 class Node
 {
   private:
-    uint16_t m; // message
-    uint16_t c; // chaining variable
-    Node* l;
-    Node* r;
-  /* END private: */
+    uint16_t* m; // message
+    uint16_t* c; // chaining variable
+    Node* l;    // left
+    Node* r;    // right
+    Node* _get(uint16_t hash, uint8_t level);
+    /* END private: */
 
   public:
-    Node() {}
-    ~Node() {}
+    Node();
+    ~Node();
+    void addLeft(Node* left);
+    void addRight(Node* right);
+    uint16_t getMessage();
+    uint16_t getChain();
+    Node* get(uint16_t hash);
+    Node* getLeft();
+    Node* getRight();
+    void set(uint16_t message, uint16_t chain);
+    /* END public: */
+};
 
-    void set(uint16_t message, uint16_t chain)
-    {
-      m = message;
-      c = chain;
-    } /* void set() */
+/** ctor */
+Node::Node()
+{
+  this->m = NULL;
+  this->c = NULL;
+  this->l = NULL;
+  this->r = NULL;
+} /* Node::Node() */
 
-    uint16_t getMessage()
-    {
-      return m;
-    } /* uint16_t getMessage() */
+/** dtor */
+Node::~Node()
+{
+} /* Node::~Node() */
 
-    uint16_t getChain()
-    {
-      return c;
-    } /* uint16_t getChain() */
+/**
+ * add a node to the left
+ * @param left
+ */
+void Node::addLeft(Node* left)
+{
+  this->l = left;
+} /* void Node::addLeft */
 
-    Node* getLeft()
-    {
-      return l;
-    }
+/**
+ * add a node to the right
+ * @param right
+ */
+void Node::addRight(Node* right)
+{
+  this->r = right;
+} /* void Node::addRight */
 
-    Node* getRight()
-    {
-      return r;
-    }
+Node* Node::_get(uint16_t hash, uint8_t level)
+{
+  Node* retval; // return value
 
-    void addLeft(Node* left)
-    {
-      l = left;
-    } /*void addLeft */
+  // ensure we are not recursing too deeply
+  if (level == (sizeof(uint16_t) * 8))
+  {
+    return (Node*) this;
+  }
 
-    void addRight(Node* right)
-    {
-      r = right;
-    } /* void addRight */
-  /* END public: */
-}
+  // get left / right node based on last binary digit of hash
+  if (hash % 2 == 0)
+  {
+    retval = this->l;
+  }
+  else
+  {
+    retval = this->r;
+  }
+  if (retval != NULL) // handle null cases rather than breaking
+  {
+    return retval->_get((hash >> 1), level++);
+  }
+  else
+  {
+    throw TRIE_NULL_PTR;
+  }
+} /* Node::_get() */
 
 Node* Node::get(uint16_t hash)
 {
-  // get a node
-}
+  return this->_get(hash, 0);
+} /* Node::get() */
 
 /**
- * Behave like the *nix "touch" command, that is, if a file does not exist,
- * create it. Next, return the node.
- * @return
+ * set a node message and chaining variable
+ * @param message
+ * @param chain
  */
-Node* Node::touch(uint16_t hash)
+void Node::set(uint16_t message, uint16_t chain)
 {
-  // Create a node if it does not exist and return
+  m = &message;
+  c = &chain;
+} /* void Node::set() */
 
 class Trie
 {
   private:
     Node* root;
-  /* END private: */
+    void _add(uint16_t hash, Node* node, uint8_t level, Node* cur);
+    /* END private: */
 
   public:
     Trie();
     ~Trie();
-    Node* get(uint16_t hash) { }
-    Node* touch(uint16_t hash) { }
-  /* END public: */
-}
+    void add(uint16_t hash, Node* node);
+    Node* get(uint16_t hash);
+    Node* touch(uint16_t hash);
+    /* END public: */
+}; /* class Trie */
 
 Trie::Trie()
 {
   root = new Node();
-}
+} /* Trie::Trie() */
 
 Trie::~Trie()
 {
   // clean up
-}
+} /* Trie::~Trie() */
 
+void Trie::_add(uint16_t hash, Node* node, uint8_t level, Node* cur)
+{
+  Node* next;
+  // ensure we are not recursing too deeply
+  if (level == (sizeof(uint16_t) * 8))
+  {
+    throw -1; // TODO: add a proper exception here
+  }
+
+  if ((hash % 2 == 0))
+  {
+    // left node
+    next = cur->getLeft();
+  }
+  else
+  {
+    // right node
+    next = cur->getRight();
+  }
+
+  if (next == NULL)
+  {
+    next = new Node();
+  }
+
+  _add((hash >> 1), node, level++, next);
+} /* Trie::_add() */
+
+void Trie::add(uint16_t hash, Node* node)
+{
+  if (root->get(hash))
+  {
+    throw TRIE_HASH_COLLISION;
+  }
+
+  _add(hash, node, 0, this->root);
+} /* Trie::add() */
 
 #endif /* TRIE_H_ */
