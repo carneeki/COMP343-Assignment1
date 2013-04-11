@@ -6,6 +6,20 @@ MODE="Release"
 PROGNAME="cryptalg"
 KEY="0xCAFE"
 
+make-n()
+{
+  PREFIX=$1m
+  POSTFIX=dd
+  dd if=/dev/urandom of=$PREFIX.clear.$POSTFIX bs=1M count=$1
+}
+
+test-n()
+{
+  PREFIX=$1m
+  POSTFIX=dd
+  do-test
+}
+
 make-big()
 {
   big
@@ -50,8 +64,8 @@ small()
 
 do-test()
 {
-  time ../$MODE/$PROGNAME $PREFIX.clear.$POSTFIX $PREFIX.crypt.$POSTFIX $KEY E
-  time ../$MODE/$PROGNAME $PREFIX.crypt.$POSTFIX $PREFIX.clear2.$POSTFIX $KEY D
+  time nice -19 ../$MODE/$PROGNAME $PREFIX.clear.$POSTFIX $PREFIX.crypt.$POSTFIX $KEY E
+  time nice -19 ../$MODE/$PROGNAME $PREFIX.crypt.$POSTFIX $PREFIX.clear2.$POSTFIX $KEY D
 }
 
 md5()
@@ -65,6 +79,10 @@ case $1 in
   ;;
   "make-small" )
     make-small
+  ;;
+  "test-n")
+    test $2
+    do-test
   ;;
   "big" )
     big
@@ -87,4 +105,13 @@ case $1 in
     do-test
     md5
   ;;
+  "suite" )
+    for BITS in {0..10}
+      do
+        SIZE=$((2**$BITS))
+        echo "Size: 2^$BITS=$SIZE TEST *****"
+#        make-n $SIZE
+        test-n $SIZE
+        echo "Size: 2^$BITS=$SIZE DONE *****"
+      done
 esac

@@ -23,7 +23,7 @@
  * inefficient.
  */
 #if DEBUG
-#define _D(code) code;
+#define _D(code) code
 #else
 #define _D(code) ;
 #endif
@@ -72,24 +72,24 @@ bool mode;
 uint16_t starting_key;
 
 /**
- * Main encrypt function.
- * Wrapper for all encryption operations.
- * @param infile reference to the input file handle
- * @param outfile reference to the output file handle
- * @param key the key to encrypt with
- * @return 0 on success, 1 on fail
- */
-int encrypt(fstream& infile, ofstream& outfile);
-
-/**
- * Feistel Round
+ * Feistel Round - Decrypt
  * Perform all rounds of the cipher as depicted in the Feistel network from the
  * assignment. This is a recursive algorithm.
  * @param round_num
  * @param left
  * @param right
  */
-void feistel_round(uint8_t round, uint8_t &Li, uint8_t &Ri);
+void decrypt(uint8_t round, uint8_t &Li, uint8_t &Ri);
+
+/**
+ * Feistel Round - Encrypt
+ * Perform all rounds of the cipher as depicted in the Feistel network from the
+ * assignment. This is a recursive algorithm.
+ * @param round_num
+ * @param left
+ * @param right
+ */
+void encrypt(uint8_t round, uint8_t &Li, uint8_t &Ri);
 
 /**
  * help
@@ -150,14 +150,6 @@ uint8_t sbox(uint8_t input);
  * @return shifted variable leaving original value untouched
  */
 uint8_t rol(uint8_t shift, const uint8_t input);
-
-/**
- * Rotate right circular shift operation
- * @param shift amount to rotate by
- * @param input variable to be rotated
- * @return shifted variable leaving original value untouched
- */
-uint8_t ror(uint8_t shift, const uint8_t input);
 
 /**
  * hi8

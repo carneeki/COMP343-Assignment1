@@ -19,10 +19,9 @@
 #include <bitset>
 #endif
 
-void feistel_round(uint8_t round, uint8_t &Li, uint8_t &Ri)
+void decrypt(uint8_t round, uint8_t &Li, uint8_t &Ri)
 {
-
-  _D(fprintf(stdout, "feistel_round(%d): starting\n", round);)
+  _D(fprintf(stdout, "decrypt(%d): starting\n", round);)
 
   // check we are not doing too many rounds
   if (round == FEISTEL_ROUNDS)
@@ -33,88 +32,91 @@ void feistel_round(uint8_t round, uint8_t &Li, uint8_t &Ri)
   uint8_t next; // Li_Next or Ri_Next (depends on encrypt vs decrypt)
   uint8_t tmp;  // temporary scratch space
 
-  // encrypt vs decrypt
-  if (mode)
+  /* Decrypt:
+   * F-BOX :: START
+   * 1. Li XOR Ki
+   * 2. sbox hi and lo nibble
+   * 3. combine nibbles and permute
+   * F-BOX :: END
+   *
+   * 4. LiNext = Ri XOR permute
+   * 5. RiNext = Li
+   * 6. Send to next Feistel round
+   */
+
+  // F-BOX :: START
+  // 1. Li XOR Ki
+  tmp = Li ^ key_lut[round];
+
+  // 2. sbox lo and hi nibble
+  // 3. combine nibbles and permute
+  tmp = permute(sbox(_hi4(tmp)), sbox(_lo4(tmp)));
+  // F-BOX :: END
+
+  // 4. LiNext = Ri XOR permute
+  // 5. RiNext = Li... Just pass Li
+  next = Ri ^ tmp;
+
+  // call recursively, but not too many times
+  if (round + 1 < FEISTEL_ROUNDS)
   {
-    // encrypt
-
-    // f-box start
-    // 1. Ri XOR Ki
-    // 2. sbox hi and lo nibble
-    // 3. combine nibbles and permute
-    // f-box end
-
-    // 4. RiNext = Li XOR permute
-    // 5. LiNext = Ri
-    // 6. Send to next Feistel round
-
-    // f-box start
-    // 1. Ri XOR Ki
-    tmp = (Ri ^ key_lut[round]);
-
-    _D(
-        fprintf(stdout, "feistel_round(%d): Ri XOR Ki = 0x%02x     ^ 0x%02x\n", round,Ri, key_lut[round]); bitset<8> bRi(Ri); bitset<8> bKi(key_lut[round]); bitset<8> btmp(tmp); cout << "feistel_round() : Ri ^ Ki   = " << bRi << " ^ " << bKi << "=" << btmp << endl;)
-
-    // 2. sbox lo and hi nibble
-    // 3. combine nibbles and permute
-    tmp = permute(sbox(_hi4(tmp)), sbox(_lo4(tmp)));
-    // f-box end
-
-    // 4. RiNext = Li XOR permute
-    // 5. LiNext = Ri... Just pass Ri
-    next = Li ^ tmp;
-
-    _D(
-        bitset<8> bLi(Li); bitset<8> bPermute(tmp); bitset<8> bnext(next); fprintf(stdout, "feistel_round(%d): Li XOR permute: ", round); cout << bLi << " ^ " << bPermute << " = " << bnext << endl;)
-    // f-box end
-
-    // call recursively, but not too many times
-    if (round + 1 < FEISTEL_ROUNDS)
-    {
-      feistel_round(round + 1, Ri, next);
-    }
-    // update references for 'return' to parent
-    Li = Ri;
-    Ri = next;
+    decrypt(round + 1, next, Li);
   }
-  else
+
+  // update references for 'return' to parent
+  Ri = Li;
+  Li = next;
+}
+
+void encrypt(uint8_t round, uint8_t &Li, uint8_t &Ri)
+{
+  _D(fprintf(stdout, "encrypt(%d): starting\n", round);)
+
+  // check we are not doing too many rounds
+  if (round == FEISTEL_ROUNDS)
   {
-    // decrypt
-
-    // f-box start
-    // 1. Li XOR Ki
-    // 2. sbox hi and lo nibble
-    // 3. combine nibbles and permute
-    // f-box end
-
-    // 4. LiNext = Ri XOR permute
-    // 5. RiNext = Li
-    // 6. Send to next Feistel round
-
-    // f-box start
-    // 1. Li XOR Ki
-    tmp = Li ^ key_lut[round];
-
-    // 2. sbox lo and hi nibble
-    // 3. combine nibbles and permute
-    tmp = permute(sbox(_hi4(tmp)), sbox(_lo4(tmp)));
-    // f-box end
-
-    // 4. LiNext = Ri XOR permute
-    // 5. RiNext = Li... Just pass Li
-    next = Ri ^ tmp;
-
-    // call recursively, but not too many times
-    if (round + 1 < FEISTEL_ROUNDS)
-    {
-      feistel_round(round + 1, next, Li);
-    }
-
-    // update references for 'return' to parent
-    Ri = Li;
-    Li = next;
+    return;
   }
-  return;
+
+  uint8_t next; // Li_Next or Ri_Next (depends on encrypt vs decrypt)
+  uint8_t tmp;  // temporary scratch space
+
+  /* Encrypt:
+   * F-BOX :: START
+   * 1. Ri XOR Ki
+   * 2. sbox hi and lo nibble
+   * 3. combine nibbles and permute
+   * F-BOX :: END
+   *
+   * 4. RiNext = Li XOR permute
+   * 5. LiNext = Ri
+   * 6. Send to next Feistel round
+   */
+
+  // F-BOX :: START
+  // 1. Ri XOR Ki
+  tmp = (Ri ^ key_lut[round]);
+
+  _D(
+      fprintf(stdout, "encrypt(%d): Ri XOR Ki = 0x%02x     ^ 0x%02x\n", round,Ri, key_lut[round]); bitset<8> bRi(Ri); bitset<8> bKi(key_lut[round]); bitset<8> btmp(tmp); cout << "feistel_round() : Ri ^ Ki   = " << bRi << " ^ " << bKi << "=" << btmp << endl;);
+
+  // 2. sbox lo and hi nibble
+  // 3. combine nibbles and permute
+  tmp = permute(sbox(_hi4(tmp)), sbox(_lo4(tmp)));
+  // F-BOX :: END
+
+  // 4. RiNext = Li XOR permute
+  // 5. LiNext = Ri... Just pass Ri
+  next = Li ^ tmp;
+
+  // call recursively, but not too many times
+  if (round + 1 < FEISTEL_ROUNDS)
+  {
+    encrypt(round + 1, Ri, next);
+  }
+  // update 'return' references
+  Li = Ri;
+  Ri = next;
 }
 
 void help(char* argv[])
@@ -192,25 +194,42 @@ int main(int argc, char* argv[])
       cur_block = 0;)
 
   mode = _init(argc, argv, in, out);
-  if (!mode)
+
+  // while having the same while() loop duplicates some code, it results in
+  // fewer JMP opcodes in the assembly when compiled
+  if (mode)
+  {
+    // encrypt
+    while (in.read((char*) buf, BLOCK_SIZE))
+    {
+      _D(
+          fprintf(stderr, "********** main(): in  block[0x%04lx] *******************************************\n",cur_block); fprintf(stderr, "main(): in  block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_in(buf[0]); bitset<8> r_in(buf[1]); cout << " " << l_in << " : " << r_in << endl;)
+
+      encrypt(0, buf[0], buf[1]);
+
+      _D(
+          fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_out(buf[0]); bitset<8> r_out(buf[1]); cout << " " << l_out << " : " << r_out << endl; cur_block++;)
+
+      out.write((char*) buf, BLOCK_SIZE);
+    }
+  }
+  else
   {
     // decrypt
     keyreverse();
-  }
 
-  while (in.read((char*) &buf, BLOCK_SIZE))
-  {
+    while (in.read((char*) buf, BLOCK_SIZE))
+    {
+      _D(
+          fprintf(stderr, "********** main(): in  block[0x%04lx] *******************************************\n",cur_block); fprintf(stderr, "main(): in  block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_in(buf[0]); bitset<8> r_in(buf[1]); cout << " " << l_in << " : " << r_in << endl;)
 
-    _D(
-        fprintf(stderr, "********** main(): in  block[0x%04lx] *******************************************\n",cur_block); fprintf(stderr, "main(): in  block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_in(buf[0]); bitset<8> r_in(buf[1]); cout << " " << l_in << " : " << r_in << endl;)
+      decrypt(0, buf[0], buf[1]);
 
-    feistel_round(0, buf[0], buf[1]);
+      _D(
+          fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_out(buf[0]); bitset<8> r_out(buf[1]); cout << " " << l_out << " : " << r_out << endl; cur_block++;)
 
-    _D(
-        fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_out(buf[0]); bitset<8> r_out(buf[1]); cout << " " << l_out << " : " << r_out << endl; cur_block++;)
-
-    out.write((char*) buf, BLOCK_SIZE);
-
+      out.write((char*) buf, BLOCK_SIZE);
+    }
   }
 
   in.close();
@@ -225,7 +244,7 @@ uint8_t permute(uint8_t hi, uint8_t lo)
 
   _D(fprintf(stdout, "permute(): starting\n");)
 
-// combine nibbles to get byte
+  // combine nibbles to get byte
   uint8_t combined = ((hi << 4) | lo);
   uint8_t rolCombined = rol(2, combined);
 
@@ -280,7 +299,7 @@ bool _init(int argc, char* argv[], fstream &in, ofstream &out)
 
   _D(fprintf(stdout, "_init(): starting\n");)
 
-// Show a friendly help message
+  // Show a friendly help message
   if (argc != 5)
   {
     help(argv);
@@ -299,7 +318,7 @@ bool _init(int argc, char* argv[], fstream &in, ofstream &out)
   in.open(strin, ios::binary | ios::in | ios::out | ios::ate);
   out.open(strout, ios::binary | ios::out | ios::trunc);
 
-// do sanity checks on files now
+  // do sanity checks on files now
   if (!in.good())
   {
     fprintf(stderr, "FATAL: input file %s could not be opened. Quitting.\n",
@@ -320,7 +339,7 @@ bool _init(int argc, char* argv[], fstream &in, ofstream &out)
     exit(EXIT_FAILURE);
   }
 
-// assume input files are openable
+  // assume input files are openable
   if ((*oper == 'E') || (*oper == 'e'))
   {
     mode = 1;
