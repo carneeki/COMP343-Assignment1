@@ -1,3 +1,4 @@
 Debug/*
 Release/*
-tests/*.dd
+tests/*clear*
+tests/*crypt*
