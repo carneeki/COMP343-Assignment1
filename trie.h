@@ -15,8 +15,29 @@
 #ifndef TRIE_H_
 #define TRIE_H_
 
-#define TRIE_NULL_PTR 0
-#define TRIE_HASH_COLLISION 1
+struct NullPointerException: public exception
+{
+    const char* what() const throw ()
+    {
+      return "Null Pointer Exception.";
+    }
+};
+
+struct HashCollisionException: public exception
+{
+    const char * what() const throw ()
+    {
+      return "A hash collision was found.";
+    }
+};
+
+struct RecursionTooDeepException: public exception
+{
+    const char* what() const throw ()
+    {
+      return "Recursion too deep.";
+    }
+};
 
 class Node
 {
@@ -99,7 +120,7 @@ Node* Node::_get(uint16_t hash, uint8_t level)
   }
   else
   {
-    throw TRIE_NULL_PTR;
+    throw NullPointerException();
   }
 } /* Node::_get() */
 
@@ -107,6 +128,22 @@ Node* Node::get(uint16_t hash)
 {
   return this->_get(hash, 0);
 } /* Node::get() */
+
+Node* Node::getLeft()
+{
+  if( (this->l) != NULL)
+    return this->l;
+  else
+    throw NullPointerException();
+} /* Node::getLeft() */
+
+Node* Node::getRight()
+{
+  if( (this->r) != NULL)
+    return this->r;
+  else
+    throw NullPointerException();
+} /* Node::getRight() */
 
 /**
  * set a node message and chaining variable
@@ -133,7 +170,8 @@ class Trie
     Node* get(uint16_t hash);
     Node* touch(uint16_t hash);
     /* END public: */
-}; /* class Trie */
+};
+/* class Trie */
 
 Trie::Trie()
 {
@@ -151,23 +189,28 @@ void Trie::_add(uint16_t hash, Node* node, uint8_t level, Node* cur)
   // ensure we are not recursing too deeply
   if (level == (sizeof(uint16_t) * 8))
   {
-    throw -1; // TODO: add a proper exception here
+    throw RecursionTooDeepException();
   }
 
-  if ((hash % 2 == 0))
+  try
   {
-    // left node
-    next = cur->getLeft();
+    if ((hash % 2 == 0))
+    {
+      // left node
+      next = cur->getLeft();
+    }
+    else
+    {
+      // right node
+      next = cur->getRight();
+    }
   }
-  else
+  catch (const NullPointerException& e)
   {
-    // right node
-    next = cur->getRight();
-  }
-
-  if (next == NULL)
-  {
-    next = new Node();
+    if (next == NULL)
+    {
+      next = new Node();
+    }
   }
 
   _add((hash >> 1), node, level++, next);
@@ -175,11 +218,18 @@ void Trie::_add(uint16_t hash, Node* node, uint8_t level, Node* cur)
 
 void Trie::add(uint16_t hash, Node* node)
 {
-  if (root->get(hash))
+  try
   {
-    throw TRIE_HASH_COLLISION;
+    if (root->get(hash))
+    {
+      throw HashCollisionException();
+    }
   }
 
+  catch (const NullPointerException& e)
+  {
+    // do nothing
+  }
   _add(hash, node, 0, this->root);
 } /* Trie::add() */
 
