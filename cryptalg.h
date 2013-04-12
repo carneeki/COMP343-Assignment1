@@ -64,6 +64,7 @@ uint8_t key_lut[FEISTEL_ROUNDS];
  * Encrypt vs Decrypt operation. Encrypt = 1. Decrypt = 0;
  */
 bool mode;
+
 /**
  * starting key
  * This is the key that the user enters in the command line argument to
@@ -71,118 +72,22 @@ bool mode;
  */
 uint16_t starting_key;
 
-/**
- * Feistel Round - Decrypt
- * Perform all rounds of the cipher as depicted in the Feistel network from the
- * assignment. This is a recursive algorithm.
- * @param round_num
- * @param left
- * @param right
- */
-void decrypt(uint8_t round, uint8_t &Li, uint8_t &Ri);
-
-/**
- * Feistel Round - Encrypt
- * Perform all rounds of the cipher as depicted in the Feistel network from the
- * assignment. This is a recursive algorithm.
- * @param round_num
- * @param left
- * @param right
- */
-void encrypt(uint8_t round, uint8_t &Li, uint8_t &Ri);
-
-/**
- * help
- * Help function to display a message showing user how to use the program.
- * Returns 1 and terminates execution.
- * @param argv
- */
-void help(char* argv[]);
-
-/**
- * keyreverse
- * Reverse the key schedule for decryption
- * @param key_lut
- */
+void decrypt(uint8_t, uint8_t &, uint8_t&);
+void encrypt(uint8_t, uint8_t &, uint8_t&);
+void help(char*[]);
 void keyreverse();
+void keysched(uint8_t, uint8_t*);
+uint8_t permute(uint8_t, uint8_t);
+uint8_t rol(uint8_t, const uint8_t);
 
-/**
- * keysched
- * Key scheduler algorithm - generate all keys and store in the LUT.
- * @param round
- * @param key
- * @return
- */
-void keysched(uint8_t round, uint8_t *key_lut);
+uint8_t sbox(uint8_t);
 
-/**
- * main
- * main program block
- * @param argc argument count
- * @param argv array of arguments provided
- * @return 0 on success, 1 on failure
- */
-int main(int argc, char* argv[]);
+uint8_t _hi4(uint8_t);
+uint8_t _lo4(uint8_t);
 
-/**
- * Permute
- * Permute assemble hi and lo nibbles and permute them by performing a circular
- * left shift (by 2).
- * @param uint8_t *hi hi order nibble
- * @param uint8_t *lo lo order nibble
- * @return uint8_t permuted byte
- */
-uint8_t permute(uint8_t hi, uint8_t lo);
+uint8_t _hi8(uint16_t);
+uint8_t _lo8(uint16_t);
 
-/**
- * sbox
- * Lookup function (LUT) for s-box
- * This is a fast function using an array
- * @param input nibble
- * @return output nibble
- */
-uint8_t sbox(uint8_t input);
-
-/**
- * Rotate left circular shift operations
- * @param shift amount to rotate by
- * @param input variable to be rotated
- * @return shifted variable leaving original value untouched
- */
-uint8_t rol(uint8_t shift, const uint8_t input);
-
-/**
- * hi8
- * Extract 8 high order bits from integer
- * @param input
- * @return
- */
-uint8_t _hi8(uint16_t input);
-
-/**
- * lo8
- * Extract 8 low order bits from integer
- * @param input
- * @return
- */
-uint8_t _lo8(uint16_t input);
-
-/**
- * hi4
- * Extract 4 high order bits from integer
- * @param input
- * @return
- */
-uint8_t _hi4(uint8_t input);
-
-/**
- * lo4
- * Extract 4 low order bits from integer
- * @param input
- * @return
- */
-uint8_t _lo4(uint8_t input);
-
-bool _init(int argc, char* argv[], fstream &in, ofstream &out);
+bool _init(int, char*, fstream&, ofstream&);
 
 #endif /* CRYPTALG_H_ */
