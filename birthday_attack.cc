@@ -34,26 +34,32 @@ int main(int argc, char* argv[])
   // (actually - worst case will be (2^16)+1 because in a VERY worst case,
   // the first 2^16 cases will not collide, but on the 2^16 +1 case, we MUST have
   // a collision by way of the entire hash address space being fully exhausted.
-  for (uint8_t l = 0; l < (2 ^ (sizeof(uint16_t) * 8)); l++)
-  {
-    // generate new left message
-    for (uint8_t r = 0; r < (2 ^ (sizeof(uint16_t) * 8)); r++)
-    {
-      uint32_t tmp_msg = l;
-      tmp_msg = (tmp_msg << 8) | r;
 
-      // generate new right message
-      for (uint16_t c = 0; c < (2 ^ (sizeof(uint16_t) * 8)); c++)
+  // BUT incrementing chain variable (key schedule) is expensive by comparison
+  // to incrementing an input message - let's iterate all values (messages) for
+  // one chain variable and only then increment. We might get lucky and have a
+  // collision before generating a new key.
+  for (uint16_t c = 0; c < (2 ^ (sizeof(uint16_t) * 8)); c++)
+  {
+    // generate a new chaining variable
+    starting_key = c;
+    keysched(0, key_lut);
+
+    for (uint8_t l = 0; l < (2 ^ (sizeof(uint16_t) * 8)); l++)
+    {
+      // generate new left message
+      for (uint8_t r = 0; r < (2 ^ (sizeof(uint16_t) * 8)); r++)
       {
+        uint32_t tmp_msg = l;
+        tmp_msg = (tmp_msg << 8) | r;
+
+        // generate new right message
         // generate a new node to store the message
         Node* node = new Node();
         node->set(tmp_msg, c);
         uint8_t tmp_l = l; // need to copy l and r, encrypt() in prev round
         uint8_t tmp_r = r; // will have otherwise overwritten (by reference)
 
-        // generate a new chaining variable
-        starting_key = c;
-        keysched(0, key_lut);
         encrypt(0, tmp_l, tmp_r);
 
         // combine l (left 8), r (right 8) => this is the hash
@@ -63,8 +69,7 @@ int main(int argc, char* argv[])
         try
         {
           db.add(tmp_hash, node);
-        }
-        catch (const HashCollisionException& e)
+        } catch (const HashCollisionException& e)
         {
           fprintf(stdout, "%s\n", e.what());
         }
