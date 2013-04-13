@@ -15,6 +15,11 @@
  * Please read the function prototypes in cryptalg.h for descriptions of each
  * function.
  */
+#if DEBUG
+#include <iostream>
+#include <bitset>
+#endif
+
 #include "cryptalg.h"
 #include "helpers.h"
 
@@ -100,8 +105,7 @@ int main(int argc, char* argv[])
     hash = l;
     hash = (hash << 8) | r;
 
-    //fprintf(stdout, "%04x=(%04x,%04x)\n", hash,c,m);
-    fprintf(stdout, "%04x\n", hash);
+    _D(fprintf(stdout, "%04x=(%04x,%04x)\n", hash,c,m);)
 
     // store the node in the hash map
 
@@ -114,10 +118,11 @@ int main(int argc, char* argv[])
     if (iter != hash_map.end())
     {
       fprintf(stdout,
-          "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision on hash:0x%04x\n",
-          iter->second.m, iter->second.c, hash_input.m, hash_input.c, hash);
-
-      fprintf(stdout, "size of hash_map %ld\n", hash_map.size());
+          "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision\n",
+          iter->second.m, iter->second.c, hash_input.m, hash_input.c);
+      _D(
+          fprintf(stdout, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision on hash:0x%04x\n", iter->second.m, iter->second.c, hash_input.m, hash_input.c, hash);)
+      _D(fprintf(stdout, "size of hash_map %ld\n", hash_map.size());)
       return 0;
     }
     hash_map[hash] = hash_input;

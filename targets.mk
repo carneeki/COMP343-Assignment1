@@ -74,6 +74,11 @@ double_cipher_attack.o:
 	@echo 'TODO'
 	@echo ' '
 
+test_birthday_attack: birthday_attack
+	@echo 'Running binary: ./birthday_attack'
+	./birthday_attack
+	echo 'Done! '
+
 # Other Targets
 clean:
 	-$(RM) \
