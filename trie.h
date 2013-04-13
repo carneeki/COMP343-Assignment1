@@ -15,29 +15,10 @@
 #ifndef TRIE_H_
 #define TRIE_H_
 
-struct NullPointerException: public exception
-{
-    const char* what() const throw ()
-    {
-      return "Null Pointer Exception.";
-    }
-};
-
-struct HashCollisionException: public exception
-{
-    const char * what() const throw ()
-    {
-      return "A hash collision was found.";
-    }
-};
-
-struct RecursionTooDeepException: public exception
-{
-    const char* what() const throw ()
-    {
-      return "Recursion too deep.";
-    }
-};
+#include "trie_helpers.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sstream>
 
 class Node
 {
@@ -46,7 +27,7 @@ class Node
     uint16_t* c; // chaining variable
     Node* l;    // left
     Node* r;    // right
-    Node* _get(uint16_t hash, uint8_t level);
+    Node* _get(uint16_t hash, uint8_t ttl);
     /* END private: */
 
   public:
@@ -54,14 +35,31 @@ class Node
     ~Node();
     void addLeft(Node* left);
     void addRight(Node* right);
-    uint16_t getMessage();
-    uint16_t getChain();
+    uint16_t* getMessage();
+    uint16_t* getChain();
     Node* get(uint16_t hash);
     Node* getLeft();
     Node* getRight();
-    void set(uint16_t message, uint16_t chain);
+    void set(uint16_t* message, uint16_t* chain);
     /* END public: */
 };
+
+class Trie
+{
+  private:
+    Node* root;
+    void _add(uint16_t hash, Node* node, uint8_t ttl, Node* cur);
+    /* END private: */
+
+  public:
+    Trie();
+    ~Trie();
+    void add(uint16_t hash, Node* node);
+    Node* get(uint16_t hash);
+    Node* touch(uint16_t hash);
+    /* END public: */
+};
+/* class Trie */
 
 /** ctor */
 Node::Node()
@@ -83,7 +81,10 @@ Node::~Node()
  */
 void Node::addLeft(Node* left)
 {
-  this->l = left;
+  if(l != NULL)
+    throw HashCollisionException();
+
+  l = left;
 } /* void Node::addLeft */
 
 /**
@@ -92,36 +93,26 @@ void Node::addLeft(Node* left)
  */
 void Node::addRight(Node* right)
 {
-  this->r = right;
+  if(r != NULL)
+    throw HashCollisionException();
+
+  r = right;
 } /* void Node::addRight */
 
-Node* Node::_get(uint16_t hash, uint8_t level)
+Node* Node::_get(uint16_t hash, uint8_t ttl)
 {
-  Node* retval; // return value
+  if (ttl < 0)
+    throw RecursionTooDeepException();
 
   // ensure we are not recursing too deeply
-  if (level == (sizeof(uint16_t) * 8))
-  {
-    return (Node*) this;
-  }
+  if (ttl == 0)
+    return this;
 
   // get left / right node based on last binary digit of hash
   if (hash % 2 == 0)
-  {
-    retval = this->l;
-  }
+    return this->getLeft();
   else
-  {
-    retval = this->r;
-  }
-  if (retval != NULL) // handle null cases rather than breaking
-  {
-    return retval->_get((hash >> 1), level++);
-  }
-  else
-  {
-    throw NullPointerException();
-  }
+    return this->getRight();
 } /* Node::_get() */
 
 Node* Node::get(uint16_t hash)
@@ -129,9 +120,26 @@ Node* Node::get(uint16_t hash)
   return this->_get(hash, 0);
 } /* Node::get() */
 
+uint16_t* Node::getMessage()
+{
+  if(this->m == NULL)
+    throw NullPointerException();
+
+  return this->m;
+}
+
+uint16_t* Node::getChain()
+{
+
+  if(this->c == NULL)
+    throw NullPointerException();
+
+  return this->c;
+}
+
 Node* Node::getLeft()
 {
-  if( (this->l) != NULL)
+  if ((this->l) != NULL)
     return this->l;
   else
     throw NullPointerException();
@@ -139,7 +147,7 @@ Node* Node::getLeft()
 
 Node* Node::getRight()
 {
-  if( (this->r) != NULL)
+  if ((this->r) != NULL)
     return this->r;
   else
     throw NullPointerException();
@@ -150,28 +158,11 @@ Node* Node::getRight()
  * @param message
  * @param chain
  */
-void Node::set(uint16_t message, uint16_t chain)
+void Node::set(uint16_t* message, uint16_t* chain)
 {
-  m = &message;
-  c = &chain;
+  m = message;
+  c = chain;
 } /* void Node::set() */
-
-class Trie
-{
-  private:
-    Node* root;
-    void _add(uint16_t hash, Node* node, uint8_t level, Node* cur);
-    /* END private: */
-
-  public:
-    Trie();
-    ~Trie();
-    void add(uint16_t hash, Node* node);
-    Node* get(uint16_t hash);
-    Node* touch(uint16_t hash);
-    /* END public: */
-};
-/* class Trie */
 
 Trie::Trie()
 {
@@ -183,54 +174,61 @@ Trie::~Trie()
   // clean up
 } /* Trie::~Trie() */
 
-void Trie::_add(uint16_t hash, Node* node, uint8_t level, Node* cur)
+void Trie::_add(uint16_t hash, Node* node, uint8_t ttl, Node* cur)
 {
-  Node* next;
-  // ensure we are not recursing too deeply
-  if (level == (sizeof(uint16_t) * 8))
-  {
-    throw RecursionTooDeepException();
-  }
+  Node* next = NULL;
 
-  try
+  // ensure we are not recursing too deeply
+  if (ttl < 0)
+    throw RecursionTooDeepException();
+
+  // if we are at the end of the hash, store the message in the trie
+  if (ttl == 0)
   {
     if ((hash % 2 == 0))
     {
-      // left node
-      next = cur->getLeft();
+      cur->addLeft(node);  // even value - node belongs left
+      return;
     }
     else
     {
-      // right node
-      next = cur->getRight();
+      cur->addRight(node); // odd value - node belongs right
+      return;
     }
+    return;
   }
-  catch (const NullPointerException& e)
+
+  // go to the next layer down the trie
+  if ((hash % 2 == 0))
   {
-    if (next == NULL)
+    // left node
+    try { next = cur->getLeft(); }
+    catch (const NullPointerException& e)
     {
       next = new Node();
+      cur->addLeft(next);
+    }
+  }
+  else
+  {
+    // left node
+    try { next = cur->getRight(); }
+    catch (const NullPointerException& e)
+    {
+      next = new Node();
+      cur->addRight(next);
     }
   }
 
-  _add((hash >> 1), node, level++, next);
+  ttl--;
+
+  _add((hash >> 1), node, ttl, next);
+  return;
 } /* Trie::_add() */
 
 void Trie::add(uint16_t hash, Node* node)
 {
-  try
-  {
-    if (root->get(hash))
-    {
-      throw HashCollisionException();
-    }
-  }
-
-  catch (const NullPointerException& e)
-  {
-    // do nothing
-  }
-  _add(hash, node, 0, this->root);
+  _add(hash, node, 16, this->root);
 } /* Trie::add() */
 
 #endif /* TRIE_H_ */
