@@ -63,7 +63,7 @@ cryptalg.o:
 	@echo 'Finished building: $@'
 	@echo ' '
 
-double_cipher_attack: double_cipher_attack.o
+double_cipher_attack:	double_cipher_attack.o
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
 	$(CPP) $(LDFLAGS) $@.o -o $@
@@ -71,9 +71,11 @@ double_cipher_attack: double_cipher_attack.o
 	@echo ' '
 
 double_cipher_attack.o:
-	@echo 'TODO'
+	@echo 'Building file: ../double_cipher_attack.cc'
+	@echo 'Invoking: GCC C++ Compiler'
+	$(CPP) $(CFLAGS) -c ../double_cipher_attack.cc -o $@
+	@echo 'Finished building: $@'
 	@echo ' '
-
 test_birthday_attack: birthday_attack
 	@echo 'Running binary: ./birthday_attack'
 	./birthday_attack

@@ -1,5 +1,5 @@
 /*
- * cryptalg.cc
+ * birthday_attack.cc
  *
  *  Created on: 31/03/2013
  *      Author: carneeki
