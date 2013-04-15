@@ -16,78 +16,24 @@
 #include <fstream>  // ifstream
 
 /**
- * Feistel Round - Decrypt
+ * Feistel Round - feistel
  * Perform all rounds of the cipher as depicted in the Feistel network from the
  * assignment. This is a recursive algorithm.
  * @param round_num
  * @param left
  * @param right
+ * @param key_lut
  */
-void decrypt( uint8_t round, uint8_t &Li, uint8_t &Ri,
+void feistel( uint8_t f_round, uint8_t &Li, uint8_t &Ri,
               const uint16_t (&key_lut)[FEISTEL_ROUNDS] )
 {
-  _D( fprintf(stdout, "decrypt(%d): starting\n", round); )
+  _D(
+      fprintf(stderr, "      encrypt(%d): starting\n", f_round);
+      fprintf(stderr, "                : Li = 0x%2x\n", Li);
+  );
 
   // check we are not doing too many rounds
-  if( round == FEISTEL_ROUNDS )
-  {
-    return;
-  }
-
-  uint8_t next; // Li_Next or Ri_Next (depends on encrypt vs decrypt)
-  uint8_t tmp;  // temporary scratch space
-
-  /* Decrypt:
-   * F-BOX :: START
-   * 1. Li XOR Ki
-   * 2. sbox hi and lo nibble
-   * 3. combine nibbles and permute
-   * F-BOX :: END
-   *
-   * 4. LiNext = Ri XOR permute
-   * 5. RiNext = Li
-   * 6. Send to next Feistel round
-   */
-
-  // F-BOX :: START
-  // 1. Li XOR Ki
-  tmp = Li ^ key_lut[round];
-
-  // 2. sbox lo and hi nibble
-  // 3. combine nibbles and permute
-  tmp = permute( sbox( _hi4( tmp ) ), sbox( _lo4( tmp ) ) );
-  // F-BOX :: END
-
-  // 4. LiNext = Ri XOR permute
-  // 5. RiNext = Li... Just pass Li
-  next = Ri ^ tmp;
-
-  // call recursively, but not too many times
-  if( round + 1 < FEISTEL_ROUNDS )
-  {
-    decrypt( round + 1, next, Li, key_lut );
-  }
-
-  // update references for 'return' to parent
-  Ri = Li;
-  Li = next;
-}
-
-/**
- * Feistel Round - Encrypt
- * Perform all rounds of the cipher as depicted in the Feistel network from the
- * assignment. This is a recursive algorithm.
- * @param round_num
- * @param left
- * @param right
- */
-void encrypt( uint8_t round, uint8_t &Li, uint8_t &Ri,
-              const uint16_t (&key_lut)[FEISTEL_ROUNDS] )
-{
-  _D( fprintf(stdout, "encrypt(%d): starting\n", round); )
-
-  // check we are not doing too many rounds
-  if( round == FEISTEL_ROUNDS )
+  if( f_round == FEISTEL_ROUNDS )
   {
     return;
   }
@@ -109,9 +55,14 @@ void encrypt( uint8_t round, uint8_t &Li, uint8_t &Ri,
 
   // F-BOX :: START
   // 1. Ri XOR Ki
-  tmp = ( Ri ^ key_lut[round] );
-
-  _D( fprintf(stdout, "encrypt(%d): Ri XOR Ki = 0x%02x     ^ 0x%02x\n", round,Ri, key_lut[round]); bitset<8> bRi(Ri); bitset<8> bKi(key_lut[round]); bitset<8> btmp(tmp); cout << "feistel_round() : Ri ^ Ki   = " << bRi << " ^ " << bKi << "=" << btmp << endl; );
+  tmp = ( Ri ^ key_lut[f_round] );
+  _D(
+      fprintf(stderr, "                : Ri ^ Ki = 0x%02x ^\n                :           0x%02x\n",Ri, key_lut[f_round]);
+      bitset<8> bRi(Ri);
+      bitset<8> bKi(key_lut[f_round]);
+      bitset<8> btmp(tmp);
+      cerr << "                :         = " << bRi << " ^" << endl <<"                :           " << bKi << endl << "                :         = " << btmp << endl;
+  );
 
   // 2. sbox lo and hi nibble
   // 3. combine nibbles and permute
@@ -121,11 +72,20 @@ void encrypt( uint8_t round, uint8_t &Li, uint8_t &Ri,
   // 4. RiNext = Li XOR permute
   // 5. LiNext = Ri... Just pass Ri
   next = Li ^ tmp;
+  _D(
+      bitset<8> bLi(Li);
+      btmp = bitset<8>(tmp);
+      bitset<8> bNext(next);
+      fprintf(stderr, "      encrypt(%d): next = Li ^ tmp\n", f_round);
+      cerr << "                : " << bLi << " ^" << endl;
+      cerr << "                : " << btmp        << endl;
+      cerr << "                : " << bNext       << endl;
+  );
 
   // call recursively, but not too many times
-  if( round + 1 < FEISTEL_ROUNDS )
+  if( f_round + 1 < FEISTEL_ROUNDS )
   {
-    encrypt( round + 1, Ri, next, key_lut );
+    feistel( f_round + 1, Ri, next, key_lut );
   }
   // update 'return' references
   Li = Ri;
@@ -153,7 +113,7 @@ void keyreverse( uint16_t (&key_lut)[FEISTEL_ROUNDS] )
 {
   uint8_t tkey;            // temporary placeholder for key reversal
 
-  _D( fprintf(stdout, "keyreverse(): starting\n"); )
+  _D( fprintf(stdout, "    keyreverse(): starting\n"); )
 
   /*****************************************************************************
    *         Important difference between encryption and decryption:
@@ -166,7 +126,7 @@ void keyreverse( uint16_t (&key_lut)[FEISTEL_ROUNDS] )
     key_lut[ ( FEISTEL_ROUNDS - 1 ) - i] = tkey;
   }
 
-  _D( for (int i = 0; i < FEISTEL_ROUNDS; i++) fprintf(stdout, "keyreverse(%d): key_lut[%d] = 0x%02x\n", i, i, key_lut[i]); )
+  _D( for (int i = 0; i < FEISTEL_ROUNDS; i++) fprintf(stdout, "    keyreverse(%d): key_lut[%d] = 0x%02x\n", i, i, key_lut[i]); )
 
 }
 
@@ -181,7 +141,7 @@ void keysched( uint8_t round, const uint16_t &starting_key,
                uint16_t (&key_lut)[FEISTEL_ROUNDS] )
 {
 
-  _D( fprintf(stdout, "keysched(%d): starting ", round); )
+  _D( fprintf(stdout, "     keysched(%d): starting", round); )
 
   // check we are not generating too many keys
   if( round == FEISTEL_ROUNDS )
@@ -202,7 +162,7 @@ void keysched( uint8_t round, const uint16_t &starting_key,
     key_lut[round] = rol( 3, key_lut[round - 1] )
         ^ rol( 5, key_lut[round - 2] );
   }
-  _D( fprintf(stdout, "key_lut[%d] = 0x%02x\n", round, key_lut[round]); )
+  _D( fprintf(stdout, " : key_lut[%d] = 0x%02x\n", round, key_lut[round]); )
 
   // call recursively, but not too many times
   if( round + 1 < FEISTEL_ROUNDS )
@@ -213,33 +173,34 @@ void keysched( uint8_t round, const uint16_t &starting_key,
 }
 
 /**
- * main
- * main program block
- * @param argc argument count
- * @param argv array of arguments provided
- * @return 0 on success, 1 on failure
- */
-//int main(int argc, char* argv[]);
-/**
  * Permute
  * Permute assemble hi and lo nibbles and permute them by performing a circular
  * left shift (by 2).
- * @param uint8_t *hi hi order nibble
- * @param uint8_t *lo lo order nibble
+ * @param uint8_t hi hi order nibble
+ * @param uint8_t lo lo order nibble
  * @return uint8_t permuted byte
  */
 uint8_t permute( uint8_t hi, uint8_t lo )
 {
 
-  _D( fprintf(stdout, "permute(): starting\n"); )
+  _D(
+      std::bitset<8> bHi(hi);
+      std::bitset<8> bLo(lo);
+      cerr << "       permute(): "                  << endl;
+      cerr << "                :       hi: " << bHi << endl;
+      cerr << "                :       lo: " << bLo << endl;
+  );
 
   // combine nibbles to get byte
   uint8_t combined = ( ( hi << 4 ) | lo );
   uint8_t rolCombined = rol( 2, combined );
 
-  _D( std::bitset<8> bCombined(combined); std::bitset<8> bRolCombined(rolCombined);
-
-  fprintf(stderr, "permute(): combined: "); cerr << bCombined << " rotated: " << bRolCombined << endl; )
+  _D(
+      std::bitset<8> bCombined(combined);
+      std::bitset<8> bRolCombined(rolCombined);
+      cerr << "                : combined: " << bCombined    << endl;
+      cerr << "                :  rotated: " << bRolCombined << endl;
+  );
 
   return rolCombined;
 }
@@ -254,7 +215,7 @@ uint8_t permute( uint8_t hi, uint8_t lo )
 uint8_t sbox( uint8_t input )
 {
 
-  _D( fprintf(stdout, "sbox(0x%x): ", input); )
+  _D( fprintf(stdout, "       sbox(0x%x): ", input); )
 
   uint8_t lut[16] =
   { 0, 1, 11, 13, 9, 14, 6, 7, 12, 5, 8, 3, 15, 2, 4, 10 };
@@ -283,6 +244,13 @@ uint8_t rol( uint8_t shift, const uint8_t input )
  */
 uint8_t _hi8( uint16_t input )
 {
+  /* 1234567890ABCDEF
+   * ********          <- we want this part
+   * 01010101 01010101 >> 8
+   * =
+   * 00000000 01010101
+   * =
+   */
   return ( input >> 8 );
 }
 
@@ -294,7 +262,48 @@ uint8_t _hi8( uint16_t input )
  */
 uint8_t _lo8( uint16_t input )
 {
-  return ( input & ( ( 1 << 8 ) - 1 ) );
+  /* 1234567890ABCDEF
+   *          ******** <- we want this part
+   * 01010101 01010101 & bitwise and
+   * 00000000 11111111 0xFF (2^8-1 = 255)
+   * =
+   * 00000000 01010101 cast and return this
+   */
+  return (uint16_t) (input & 0xFF);
+}
+
+/**
+ * hi16
+ * Extract 16 high order bits from integer
+ * @param input
+ * @return
+ */
+uint16_t _hi16( uint32_t input )
+{
+  // 1234567890ABCDEF 1234567890ABCDEF
+  // ****************                  <- we want this part
+  // 0101010101010101 xxxxxxxxxxxxxxxx >> 16
+  // 0000000000000000 0101010101010101
+  // =
+  return ( input >> 16 );
+}
+
+/**
+ * lo16
+ * Extract 16 low order bits from 32 bit integer
+ * @param input
+ * @return
+ */
+uint16_t _lo16( uint32_t input )
+{
+  /* 1234567890ABCDEF 1234567890ABCDEF
+   *                  **************** <- we want this part
+   * xxxxxxxxxxxxxxxx 0101010101010101 & bitwise and
+   * 0000000000000000 1111111111111111 0xFFFF (2^16-1 = 65535)
+   * =
+   * 0000000000000000 0101010101010101 cast and return this
+   */
+  return (uint16_t) (input & 0xFFFF);
 }
 
 /**
@@ -305,6 +314,17 @@ uint8_t _lo8( uint16_t input )
  */
 uint8_t _hi4( uint8_t input )
 {
+  /* 1234 5678
+   * ****     <- we want this part
+   * 0101 xxxx >> 4
+   * 0000 0101
+   * =
+   */
+  _D(
+      std::bitset<8> bInput(input);
+      std::bitset<8> bOutput(input >> 4);
+      cerr << "          _hi4(): " << bInput << endl << "                : " << bOutput << endl;
+  );
   return ( input >> 4 );
 }
 
@@ -316,7 +336,20 @@ uint8_t _hi4( uint8_t input )
  */
 uint8_t _lo4( uint8_t input )
 {
-  return ( input & ( ( 1 << 4 ) - 1 ) );
+  /* 1234 5678
+   *      **** <- we want this part
+   * xxxx 0101 & bitwise and
+   * 0000 1111 0xF (2^4-1 = 15)
+   * =
+   * 0000 0101 return this
+   */
+  _D(
+      std::bitset<8> bInput(input);
+      std::bitset<8> bOutput(input & 0xF );
+      cerr << "          _lo4(): " << bInput << endl << "                : " << bOutput << endl;
+  );
+
+  return (input & 0xF);
 }
 
 bool _init( int argc, char* argv[], fstream &in, ofstream &out,
@@ -324,7 +357,7 @@ bool _init( int argc, char* argv[], fstream &in, ofstream &out,
             bool &mode )
 {
 
-  _D( fprintf(stdout, "_init(): starting\n"); )
+  _D( fprintf(stdout, "         _init(): starting\n"); )
 
   // Show a friendly help message
   if( argc != 5 )
@@ -375,7 +408,7 @@ bool _init( int argc, char* argv[], fstream &in, ofstream &out,
     if( ( inlen % 2 ) == 1 )
     {
 
-      _D( fprintf(stdout, "_init(): in length has odd number bytes (%ld). Appending a zero.\n", inlen); )
+      _D( fprintf(stdout, "         _init(): in length has odd number bytes (%ld). Appending a zero.\n", inlen); )
 
       in.seekp( inlen );
       in.write( "\0", 1 );
@@ -404,7 +437,7 @@ bool _init( int argc, char* argv[], fstream &in, ofstream &out,
   in.seekp( in.beg ); // ensure pointers are definitely at START of file.
   in.seekg( in.beg );
 
-  _D( fprintf(stdout, "_init(): in: %s out: %s key: 0x%04x rounds: %d mode: %s \n", strin, strout, starting_key, FEISTEL_ROUNDS, oper); )
+  _D( fprintf(stdout, "         _init():  in: %s \n                  out: %s\n                  key: 0x%04x rounds: %d mode: %s \n", strin, strout, starting_key, FEISTEL_ROUNDS, oper); )
 
   keysched( 0, starting_key, key_lut );
 

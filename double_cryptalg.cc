@@ -25,47 +25,81 @@
 
 using namespace std;
 
-struct key32
+int main( int argc, char* argv[] )
 {
-    uint16_t k1; // key 1
-    uint16_t k2; // key 2
-};
+  _D( fprintf(stdout, "main(): starting\n"); )
 
-struct observation
-{
-    uint16_t m; // message
-    uint16_t c; // cryptogram
-};
+  /**
+   * in
+   * Input file stream. This is actually a bidirectional filestream that is
+   * (input and output) because we want to be able to append a trailing 'zero'
+   * in the event of an odd number.
+   */
+  fstream in;   // input file stream
+  /**
+   * out
+   * Output file stream.
+   */
+  ofstream out; // output file stream
 
-int main(int argc, char* argv[] )
-{
-  map<uint16_t, uint16_t> m1_observe; // msg as index, cryptogram as val
-  map<uint16_t, uint16_t> m2_observe; // msg as index, cryptogram as val
-  map<uint16_t, uint16_t> m1_rainbow; // cryptogram as index, msg as val
-  map<uint16_t, uint16_t> m2_rainbow; // cryptogram as index, msg as val
+  /**
+   * key_lut
+   * LUT (Look Up Table) for keys in the scheduling algorithm. While slightly more
+   * memory intensive (16bits * number of rounds = 128 bits = 16 bytes in default
+   * implementation), it means accessing the key for round i is far less CPU
+   * intensive (simply look up rather than generate i rounds for each byte to be
+   * encrypted). All key rounds are generated prior to an encrypt() or decrypt()
+   * operation so they are available for immediate use.
+   */
+  uint16_t key_lut[FEISTEL_ROUNDS]; // key lookup table
 
-  map<uint16_t, uint16_t>::iterator m1_o_iter; // observe iterator
-  map<uint16_t, uint16_t>::iterator m2_o_iter; // observe iterator
-  map<uint16_t, uint16_t>::iterator m1_r_iter; // rainbow iterator
-  map<uint16_t, uint16_t>::iterator m2_r_iter; // rainbow iterator
+  /**
+   * starting_key
+   * This is the starting key as provided via the command line.
+   */
+  uint16_t starting_key;
 
-  // accept 16 bit message
-  uint16_t buf;
+  /**
+   * buf[BLOCK_SIZE]
+   * An buffer for bytes read as they get encrypted / decrypted via
+   * encrypt() or decrypt() methods.
+   */
+  uint8_t buf[BLOCK_SIZE];
 
-  // accept 32 bit key
-  key32 key;
+  _D( unsigned long cur_block; // current buffer iterator
+  cur_block = 0; )
 
-  // observation 1 & 2:
-  observation observ1;
-  observation observ1;
+  // mode to determine if we are encrypting / decrypting, assigned by _init()
+  bool mode;
 
+  _init( argc, argv, in, out, starting_key, key_lut, mode );
 
-  //
-  for(int i=0; i < (2^16); i++)
+  /* read input file block by block to conserve memory for large files
+   * (entire program cosumes approx 15k of RAM despite using 2byte or 1GB input
+   * files)
+   */
+  while( in.read( (char*) buf, BLOCK_SIZE ) )
   {
-    //
-  }
-  srand(time(0));
+    _D( fprintf(stderr, "********** main(): in  block[0x%04lx] *******************************************\n",cur_block); fprintf(stderr, "main(): in  block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_in(buf[0]); bitset<8> r_in(buf[1]); cout << " " << l_in << " : " << r_in << endl; )
+    if( mode )
+    {
+      // encrypt
+      feistel( 0, buf[0], buf[1], key_lut );
+    }
+    else
+    {
+      // decrypt
+      feistel( 0, buf[0], buf[1], key_lut );
+    }
+    _D( fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_out(buf[0]); bitset<8> r_out(buf[1]); cout << " " << l_out << " : " << r_out << endl; cur_block++; )
 
+    out.write( (char*) buf, BLOCK_SIZE );
+  }
+
+  // close our buffers
+  in.close();
+  out.close();
+
+  _D( fprintf(stdout, "main(): ending\n"); )
   return 0;
 }

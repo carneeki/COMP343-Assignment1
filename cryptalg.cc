@@ -22,7 +22,7 @@
 int main( int argc, char* argv[] )
 {
 
-  _D( fprintf(stdout, "main(): starting\n"); )
+  _D( fprintf(stdout, "          main(): starting\n"); )
 
   /**
    * in
@@ -69,24 +69,42 @@ int main( int argc, char* argv[] )
 
   _init( argc, argv, in, out, starting_key, key_lut, mode );
 
+  if(!mode)
+  {
+    // reverse key schedule for decryption
+    keyreverse(key_lut);
+  }
+
   /* read input file block by block to conserve memory for large files
    * (entire program cosumes approx 15k of RAM despite using 2byte or 1GB input
    * files)
    */
   while( in.read( (char*) buf, BLOCK_SIZE ) )
   {
-    _D( fprintf(stderr, "********** main(): in  block[0x%04lx] *******************************************\n",cur_block); fprintf(stderr, "main(): in  block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_in(buf[0]); bitset<8> r_in(buf[1]); cout << " " << l_in << " : " << r_in << endl; )
+    _D(
+        fprintf(stderr, "********* main(): in  block[0x%04lx] ********************************************\n",cur_block);
+        fprintf(stderr, "          main():  in block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]);
+        bitset<8> l_in(buf[0]);
+        bitset<8> r_in(buf[1]);
+        cerr << " " << l_in << " : " << r_in << endl;
+    );
+
     if( mode )
     {
       // encrypt
-      encrypt( 0, buf[0], buf[1], key_lut );
+      feistel( 0, buf[0], buf[1], key_lut );
     }
     else
     {
       // decrypt
-      decrypt( 0, buf[0], buf[1], key_lut );
+      feistel( 0, buf[1], buf[0], key_lut );
     }
-    _D( fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_out(buf[0]); bitset<8> r_out(buf[1]); cout << " " << l_out << " : " << r_out << endl; cur_block++; )
+    _D(
+        fprintf(stderr, "          main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]);
+        bitset<8> l_out(buf[0]);
+        bitset<8> r_out(buf[1]);
+        cerr << " " << l_out << " : " << r_out << endl;
+    cur_block++; )
 
     out.write( (char*) buf, BLOCK_SIZE );
   }
@@ -95,6 +113,6 @@ int main( int argc, char* argv[] )
   in.close();
   out.close();
 
-  _D( fprintf(stdout, "main(): ending\n"); )
+  _D( fprintf(stderr, "          main(): ending\n"); )
   return 0;
 }

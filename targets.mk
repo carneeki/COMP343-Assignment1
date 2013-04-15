@@ -1,7 +1,10 @@
 #-include ../makefile.init
 
 RM := rm -rf
-
+TEST_CLEARI_FILE = m.clearI.dd
+TEST_CLEARO_FILE = m.clearO.dd
+TEST_CRYPT_FILE = m.crypt.dd
+TEST_KEY = 0xCAFE
 # All of the sources participating in the build are defined here
 #-include sources.mk
 #-include subdir.mk
@@ -48,6 +51,11 @@ birthday_attack.o:
 	$(CPP) $(CFLAGS) -c ../birthday_attack.cc -o $@
 	@echo 'Finished building: $@'
 	@echo ' '
+
+birthday_attack_test: birthday_attack
+	@echo 'Running binary: ./birthday_attack'
+	./birthday_attack
+	echo 'Done! '
 	
 cryptalg: cryptalg.o
 	@echo 'Building target: $@'
@@ -62,6 +70,16 @@ cryptalg.o:
 	$(CPP) $(CFLAGS) -c ../cryptalg.cc -o $@
 	@echo 'Finished building: $@'
 	@echo ' '
+
+cryptalg_test: cryptalg test_files
+	@echo 'Running binary: ./cryptalg '
+	@$(foreach MB, 1 2 4 8 16 32,\
+		echo 'Running test on: $(MB)$(value TEST_CLEARI_FILE)';\
+		./cryptalg $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CRYPT_FILE) $(value TEST_KEY) E;\
+		./cryptalg $(MB)$(value TEST_CRYPT_FILE) $(MB)$(value TEST_CLEARO_FILE) $(value TEST_KEY) D;\
+		md5sum $(MB)m*;\
+	)
+	echo 'Done! '
 
 double_cryptalg: double_cryptalg.o
 	@echo 'Building target: $@'
@@ -90,10 +108,6 @@ double_cipher_attack.o:
 	$(CPP) $(CFLAGS) -c ../double_cipher_attack.cc -o $@
 	@echo 'Finished building: $@'
 	@echo ' '
-test_birthday_attack: birthday_attack
-	@echo 'Running binary: ./birthday_attack'
-	./birthday_attack
-	echo 'Done! '
 
 # Other Targets
 clean:
@@ -102,8 +116,19 @@ clean:
 		*.o \
 		birthday_attack \
 		cryptalg \
-		double_cipher_attack
+		double_cipher_attack \
+		double_cryptalg \
+		*$(value TEST_CLEARI_FILE)* \
+		*$(value TEST_CLEARO_FILE)* \
+		*$(value TEST_CRYPT_FILE)*
 	-@echo ' '
+
+test_files:
+	@echo 'Creating test files.'
+	@$(foreach MB, 1 2 4 8 16 32,\
+		echo 'Creating test file: $(MB)$(value TEST_CLEARI_FILE)';\
+		dd if=/dev/urandom of=$(MB)$(value TEST_CLEARI_FILE) bs=$(MB)M count=1;\
+	)
 
 .PHONY: all clean dependents
 .SECONDARY:

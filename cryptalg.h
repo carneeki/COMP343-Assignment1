@@ -9,7 +9,7 @@
 #define CRYPTALG_H_
 
 /** DEBUG
- * Turn on debugging options through STDOUT. Debug can be turned on at compile
+ * Turn on debugging options through STDERR. Debug can be turned on at compile
  * time through "gcc -DDEBUG=1 ..." or by changing the variable below to 1.
  */
 #ifndef DEBUG
@@ -42,15 +42,13 @@
  * Number of rounds for ECB mode. This number is ONE based.
  */
 #ifndef FEISTEL_ROUNDS
-#define FEISTEL_ROUNDS 8
+#define FEISTEL_ROUNDS 2
 #endif
 /* FEISTEL_ROUNDS */
 
 using namespace std;
 
-void decrypt( uint8_t, uint8_t &, uint8_t&,
-              const uint16_t (&)[FEISTEL_ROUNDS] );
-void encrypt( uint8_t, uint8_t &, uint8_t&,
+void feistel( uint8_t, uint8_t &, uint8_t&,
               const uint16_t (&)[FEISTEL_ROUNDS] );
 void help( char*[] );
 void keyreverse( uint16_t (&)[FEISTEL_ROUNDS] );

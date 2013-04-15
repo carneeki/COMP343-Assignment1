@@ -105,13 +105,13 @@ int main( int argc, char* argv[] )
     hash_input.m = ( hash_input.m << 8 ) | r;
 
     // create the hash
-    encrypt( 0, l, r, key_lut );
+    feistel( 0, l, r, key_lut );
 
     // combine left and right parts
     hash = l;
     hash = ( hash << 8 ) | r;
 
-    _D( fprintf(stdout, "%04x=(%04x,%04x)\n", hash, hash_input.c, hash_input.m); )
+    _D( fprintf(stderr, "%04x=(%04x,%04x)\n", hash, hash_input.c, hash_input.m); )
 
     // check for a collision:
     iter = hash_map.find( hash );
@@ -121,8 +121,10 @@ int main( int argc, char* argv[] )
       fprintf( stdout, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision\n",
                iter->second.m, iter->second.c, hash_input.m, hash_input.c );
 
-      _D( fprintf(stdout, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision on hash:0x%04x\n", iter->second.m, iter->second.c, hash_input.m, hash_input.c, hash); )
-      _D( fprintf(stdout, "size of hash_map %ld\n", hash_map.size()); )
+      _D(
+          fprintf(stderr, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision on hash:0x%04x\n", iter->second.m, iter->second.c, hash_input.m, hash_input.c, hash);
+          fprintf(stderr, "size of hash_map %ld\n", hash_map.size());
+      );
 
       // exit
       return 0;

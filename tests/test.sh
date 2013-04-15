@@ -2,7 +2,7 @@
 
 TIMEFORMAT='%3R'
 
-MODE="Debug"
+MODE="Release"
 PROGNAME="cryptalg"
 KEY="0xCAFE"
 
@@ -110,7 +110,7 @@ case $1 in
       do
         SIZE=$((2**$BITS))
         echo "Size: 2^$BITS=$SIZE TEST *****"
-#        make-n $SIZE
+        make-n $SIZE
         test-n $SIZE
         echo "Size: 2^$BITS=$SIZE DONE *****"
       done
