@@ -12,6 +12,7 @@ TEST_CLEARI_FILE = m.clearI.dd
 TEST_CLEARO_FILE = m.clearO.dd
 TEST_CRYPT_FILE = m.crypt.dd
 TEST_KEY = 0xCAFE
+TEST_DOUBLE_KEY = 0xFEEDCAFE
 # All of the sources participating in the build are defined here
 #-include sources.mk
 #-include subdir.mk
@@ -106,8 +107,8 @@ double_cryptalg_test: double_cryptalg test_files
 	@echo 'Running binary: ./double_cryptalg '
 	@$(foreach MB, 1 2 4 8 16 32,\
 		echo 'Running test on: $(MB)m';\
-		./double_cryptalg $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CRYPT_FILE) $(value TEST_KEY) E;\
-		./double_cryptalg $(MB)$(value TEST_CRYPT_FILE) $(MB)$(value TEST_CLEARO_FILE) $(value TEST_KEY) D;\
+		./double_cryptalg $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CRYPT_FILE) $(value TEST_DOUBLE_KEY) E;\
+		./double_cryptalg $(MB)$(value TEST_CRYPT_FILE) $(MB)$(value TEST_CLEARO_FILE) $(value TEST_DOUBLE_KEY) D;\
 	)
 	@$(CKSUM) $(CKSUM_CKFLAGS) $(CKSUM_DB);\
 	echo 'Done! '

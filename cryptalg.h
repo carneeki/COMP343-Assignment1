@@ -42,7 +42,7 @@
  * Number of rounds for ECB mode. This number is ONE based.
  */
 #ifndef FEISTEL_ROUNDS
-#define FEISTEL_ROUNDS 2
+#define FEISTEL_ROUNDS 8
 #endif
 /* FEISTEL_ROUNDS */
 

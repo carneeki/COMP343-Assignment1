@@ -126,7 +126,7 @@ void keyreverse( uint16_t (&key_lut)[FEISTEL_ROUNDS] )
     key_lut[ ( FEISTEL_ROUNDS - 1 ) - i] = tkey;
   }
 
-  _D( for (int i = 0; i < FEISTEL_ROUNDS; i++) fprintf(stdout, "    keyreverse(%d): key_lut[%d] = 0x%02x\n", i, i, key_lut[i]); )
+  _D( for (int i = 0; i < FEISTEL_ROUNDS; i++) fprintf(stdout, "   keyreverse(%d): key_lut[%d] = 0x%02x\n", i, i, key_lut[i]); )
 
 }
 
@@ -237,6 +237,40 @@ uint8_t rol( uint8_t shift, const uint8_t input )
 }
 
 /**
+ * hi16
+ * Extract 16 high order bits from integer
+ * @param input
+ * @return
+ */
+uint16_t _hi16( uint32_t input )
+{
+  // 1234567890ABCDEF 1234567890ABCDEF
+  // ****************                  <- we want this part
+  // 0101010101010101 xxxxxxxxxxxxxxxx >> 16
+  // 0000000000000000 0101010101010101
+  // =
+  return ( input >> 16 );
+}
+
+/**
+ * lo16
+ * Extract 16 low order bits from 32 bit integer
+ * @param input
+ * @return
+ */
+uint16_t _lo16( uint32_t input )
+{
+  /* 1234567890ABCDEF 1234567890ABCDEF
+   *                  **************** <- we want this part
+   * xxxxxxxxxxxxxxxx 0101010101010101 & bitwise and
+   * 0000000000000000 1111111111111111 0xFFFF (2^16-1 = 65535)
+   * =
+   * 0000000000000000 0101010101010101 cast and return this
+   */
+  return (uint16_t) (input & 0xFFFF);
+}
+
+/**
  * hi8
  * Extract 8 high order bits from integer
  * @param input
@@ -270,40 +304,6 @@ uint8_t _lo8( uint16_t input )
    * 00000000 01010101 cast and return this
    */
   return (uint16_t) (input & 0xFF);
-}
-
-/**
- * hi16
- * Extract 16 high order bits from integer
- * @param input
- * @return
- */
-uint16_t _hi16( uint32_t input )
-{
-  // 1234567890ABCDEF 1234567890ABCDEF
-  // ****************                  <- we want this part
-  // 0101010101010101 xxxxxxxxxxxxxxxx >> 16
-  // 0000000000000000 0101010101010101
-  // =
-  return ( input >> 16 );
-}
-
-/**
- * lo16
- * Extract 16 low order bits from 32 bit integer
- * @param input
- * @return
- */
-uint16_t _lo16( uint32_t input )
-{
-  /* 1234567890ABCDEF 1234567890ABCDEF
-   *                  **************** <- we want this part
-   * xxxxxxxxxxxxxxxx 0101010101010101 & bitwise and
-   * 0000000000000000 1111111111111111 0xFFFF (2^16-1 = 65535)
-   * =
-   * 0000000000000000 0101010101010101 cast and return this
-   */
-  return (uint16_t) (input & 0xFFFF);
 }
 
 /**

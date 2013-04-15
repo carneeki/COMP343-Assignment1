@@ -8,6 +8,10 @@
 #ifndef DOUBLE_CRYPTALG_H_
 #define DOUBLE_CRYPTALG_H_
 
+#ifndef HELPERS_H_
+#include "helpers.h"
+#endif
+
 #ifndef CRYPTALG_H_
 #include "cryptalg.h"
 #endif
@@ -16,7 +20,7 @@
 #include <fstream>  // ifstream
 /**
  * CRYPTO_ROUNDS
- * Number of rounds to execute the encryption / decryption algorithm.
+ * Number of rounds to execute the whole encryption / decryption algorithm.
  */
 #ifndef CRYPTO_ROUNDS
 #define CRYPTO_ROUNDS 2
@@ -26,24 +30,43 @@
 using namespace std;
 
 /**
- * multi_encrypt
- * Iteratively call the encrypt() function with an almost identical prototype.
- * Each argument is an array of the elements that encrypt() expects of
+ * multi_feistel
+ * Iteratively call the feistel() function with an almost identical prototype.
+ * Each argument is an array of the elements that feistel() expects of
  * CRYPTO_ROUNDS in size. That is, if performing 2 CRYPTO_ROUNDS (as per
- * assignment spec), encrypt() will be called twice using the [0] and [1]
- * element of each argument.
+ * assignment spec), feistel will be called twice using the [0] and [1]
+ * element of array based arguments
  * @param Li
  * @param Ri
- * @param key_lut
+ * @param key_lut[][]
  */
-void multi_feistel( uint8_t (&Li)[CRYPTO_ROUNDS], uint8_t (&Ri)[CRYPTO_ROUNDS],
+void multi_feistel( uint8_t (&Li), uint8_t (&Ri),
                     const uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
 {
   for( int i = 0; i < CRYPTO_ROUNDS; i++ )
   {
-    feistel( 0, Li[i], Ri[i], key_lut[i] );
+    _D( fprintf(stderr, "multi_feistel(%d):\n",i); );
+    feistel( 0, Li, Ri, key_lut[i] );
   }
 }
+
+/*
+void multi_keyreverse(
+    const uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
+{
+  uint16_t tkey;
+  for( int j = 0; j < ( CRYPTO_ROUNDS - ( ( CRYPTO_ROUNDS + 1 ) / 2 ) )
+  {
+    for( int i = 0; i < ( FEISTEL_ROUNDS - ( ( FEISTEL_ROUNDS + 1 ) / 2 ) )
+    {
+      tkey = key_lut[i];
+      key_lut[i] = key_lut[ ( FEISTEL_ROUNDS - 1 ) - i];
+      key_lut[ ( FEISTEL_ROUNDS - 1 ) - i] = tkey;
+    }
+    _D( for (int i = 0; i < FEISTEL_ROUNDS; i++) fprintf(stdout, "   keyreverse(%d): key_lut[%d] = 0x%02x\n", i, i, key_lut[i]); )
+  }
+}
+*/
 
 /**
  * double_init
@@ -148,11 +171,11 @@ bool double_init( int argc, char* argv[], fstream &in, ofstream &out,
   _D( fprintf(stdout, "double_init(): in: %s out: %s key: 0x%04x rounds: %d mode: %s \n", strin, strout, starting_key, FEISTEL_ROUNDS, oper); )
 
   // get the starting key for each cryptographic round
-  s_key[0] = return ( starting_key & ( ( 1 << 16 ) - 1 ) );
-  s_key[1] = starting_key;
+  s_key[0] = _hi16( starting_key );
+  s_key[1] = _lo16( starting_key );
 
   // generate key lookup tables for each cryptographic round
-  for(int i = 0; i < CRYPTO_ROUNDS; i++)
+  for( int i = 0; i < CRYPTO_ROUNDS; i++ )
   {
     keysched( 0, s_key[i], key_lut[i] );
   }

@@ -20,7 +20,7 @@
 #include <bitset>
 #endif
 
-#include "cryptalg.h"
+#include "double_cryptalg.h"
 #include "helpers.h"
 
 using namespace std;
@@ -51,13 +51,14 @@ int main( int argc, char* argv[] )
    * encrypted). All key rounds are generated prior to an encrypt() or decrypt()
    * operation so they are available for immediate use.
    */
-  uint16_t key_lut[FEISTEL_ROUNDS]; // key lookup table
+  uint16_t tkey_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS]; // temporary key lookup table
+  uint16_t key_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS]; // key lookup table
 
   /**
    * starting_key
    * This is the starting key as provided via the command line.
    */
-  uint16_t starting_key;
+  uint32_t starting_key;
 
   /**
    * buf[BLOCK_SIZE]
@@ -72,7 +73,34 @@ int main( int argc, char* argv[] )
   // mode to determine if we are encrypting / decrypting, assigned by _init()
   bool mode;
 
-  _init( argc, argv, in, out, starting_key, key_lut, mode );
+  double_init( argc, argv, in, out, starting_key, tkey_lut, mode );
+
+  if( !mode )
+  {
+    // reverse key schedule for decryption
+    for( int i = 0; i < CRYPTO_ROUNDS; i++ )
+    {
+      keyreverse( tkey_lut[i] );
+
+      // now reverse the key schedules themselves
+      for( int j = 0; j < FEISTEL_ROUNDS; j++ )
+      {
+        key_lut[abs( i - ( CRYPTO_ROUNDS - 1 ) )][j] = tkey_lut[i][j];
+      }
+    }
+  }
+  else
+  {
+    for( int i = 0; i < CRYPTO_ROUNDS; i++ )
+    {
+      for( int j = 0; j < FEISTEL_ROUNDS; j++ )
+      {
+        key_lut[i][j] = tkey_lut[i][j];
+      }
+    }
+  }
+
+  _D( fprintf(stderr, "Key schedule:\n"); for(int i=0; i < CRYPTO_ROUNDS; i++) { for( int j = 0; j < FEISTEL_ROUNDS; j++ ) { fprintf(stderr,"key_lut[%d][%d] = %02x\n",i,j,key_lut[i][j]); } } );
 
   /* read input file block by block to conserve memory for large files
    * (entire program cosumes approx 15k of RAM despite using 2byte or 1GB input
@@ -84,12 +112,12 @@ int main( int argc, char* argv[] )
     if( mode )
     {
       // encrypt
-      feistel( 0, buf[0], buf[1], key_lut );
+      multi_feistel( buf[0], buf[1], key_lut );
     }
     else
     {
       // decrypt
-      feistel( 0, buf[0], buf[1], key_lut );
+      multi_feistel( buf[1], buf[0], key_lut );
     }
     _D( fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_out(buf[0]); bitset<8> r_out(buf[1]); cout << " " << l_out << " : " << r_out << endl; cur_block++; )
 
