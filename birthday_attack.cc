@@ -25,36 +25,6 @@
 
 using namespace std;
 
-/* Iterate every possible message (2^16) inside an iteration of every possible
- * chaining variable (2^16). This gives a total of 2^32 combinations.
- *
- * Our output only allows for 2^16 combinations
- *
- * 2^16 * 32 / (8*1024) = 256kB of memory.
- *
- * This yields WORST case memory use.
- *
- * If we apply the birthday paradox over the hash space, we can use the follow
- * function to predict the number of hashes to generate before finding a
- * collision:
- *
- * Q(H) \approx \sqrt{\frac{\pi}{2} \cdot H}
- *
- * Where:
- *   o H is the number of outputs (2^16 = 16384)
- *
- * Q(2^16) \approx \sqrt{\frac{\pi}{2} \cdot 2^16}
- *         \approx 128\sqrt{2\pi}
- *         \approx 321
- *
- * Multiple execution times appear to concur with this estimate.
- *
- * 321 * 32 = 10272 bits
- *          = 1284 bytes
- *
- * Therefore average case memory use is approximately 1284 bytes.
- */
-
 /**
  * Store chaining variable and message
  */
@@ -64,6 +34,39 @@ struct input_pair
     uint16_t c; // chain variable
 };
 
+/* Iterate every possible message (2^16) inside an iteration of every possible
+ * chaining variable (2^16). This gives a total of 2^32 combinations, a 32 bit
+ * input.
+ *
+ * Our output only allows for 2^16 combinations.
+ *
+ * (total combinations * input size) / (8*1024) = WORST CASE memory use.
+ *
+ *                       (2^16 * 32) / (8*1024) = 256kB of memory.
+ *
+ * 256kB is WORST CASE memory use.
+ *
+ * If we apply the birthday paradox over the hash space, we can use the follow
+ * function to predict the number of hashes to generate before finding a
+ * collision (\LaTeX formatting):
+ *
+ * Q(H) \approx \sqrt{\frac{\pi}{2} \cdot H}
+ *
+ * Where H is the number of outputs.
+ * Substitute H = 2^16:
+ *
+ * Q(2^16) \approx \sqrt{\frac{\pi}{2} \cdot 2^16}
+ *         \approx 128\sqrt{2\pi}
+ *         \approx 321
+ *
+ * This number concurs with testing in debug mode (compile with flag -DDEBUG=1)
+ *
+ * (avg combinations * input size) = AVERAGE CASE memory use
+ *                       ~321 * 32 = ~10272 bits
+ *                                 = ~1284 bytes
+ *
+ * Therefore AVERAGE CASE memory use is approximately 1284 bytes.
+ */
 int main( int argc, char* argv[] )
 {
 
