@@ -44,12 +44,12 @@ int main( int argc, char* argv[] )
 
   /**
    * key_lut
-   * LUT (Look Up Table) for keys in the scheduling algorithm. While slightly more
-   * memory intensive (16bits * number of rounds = 128 bits = 16 bytes in default
-   * implementation), it means accessing the key for round i is far less CPU
-   * intensive (simply look up rather than generate i rounds for each byte to be
-   * encrypted). All key rounds are generated prior to an encrypt() or decrypt()
-   * operation so they are available for immediate use.
+   * LUT (Look Up Table) for keys in the scheduling algorithm. While slightly
+   * more memory intensive (16bits * number of rounds = 128 bits = 16 bytes in
+   * default implementation), it means accessing the key for round i is far less
+   * CPU intensive (simply look up rather than generate i rounds for each byte
+   * to be encrypted). All key rounds are generated prior to a call to feistel()
+   * so they are available for immediate use.
    */
   uint16_t tkey_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS]; // temporary key lookup table
   uint16_t key_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS]; // key lookup table
@@ -62,8 +62,7 @@ int main( int argc, char* argv[] )
 
   /**
    * buf[BLOCK_SIZE]
-   * An buffer for bytes read as they get encrypted / decrypted via
-   * encrypt() or decrypt() methods.
+   * An buffer for bytes read to go into feistel() call.
    */
   uint8_t buf[BLOCK_SIZE];
 
@@ -78,19 +77,12 @@ int main( int argc, char* argv[] )
   if( !mode )
   {
     // reverse key schedule for decryption
-    for( int i = 0; i < CRYPTO_ROUNDS; i++ )
-    {
-      keyreverse( tkey_lut[i] );
-
-      // now reverse the key schedules themselves
-      for( int j = 0; j < FEISTEL_ROUNDS; j++ )
-      {
-        key_lut[abs( i - ( CRYPTO_ROUNDS - 1 ) )][j] = tkey_lut[i][j];
-      }
-    }
+    multi_keyreverse(tkey_lut,key_lut);
   }
   else
   {
+    // no reversing needed, just a plain copy
+    // TODO: see if we can save an extra 128 bytes by not having to copy...
     for( int i = 0; i < CRYPTO_ROUNDS; i++ )
     {
       for( int j = 0; j < FEISTEL_ROUNDS; j++ )
@@ -103,7 +95,7 @@ int main( int argc, char* argv[] )
   _D( fprintf(stderr, "Key schedule:\n"); for(int i=0; i < CRYPTO_ROUNDS; i++) { for( int j = 0; j < FEISTEL_ROUNDS; j++ ) { fprintf(stderr,"key_lut[%d][%d] = %02x\n",i,j,key_lut[i][j]); } } );
 
   /* read input file block by block to conserve memory for large files
-   * (entire program cosumes approx 15k of RAM despite using 2byte or 1GB input
+   * (entire program consumes approx 15k of RAM even if using 2byte or 1GB input
    * files)
    */
   while( in.read( (char*) buf, BLOCK_SIZE ) )

@@ -50,23 +50,28 @@ void multi_feistel( uint8_t (&Li), uint8_t (&Ri),
   }
 }
 
-/*
+/**
+ * multi_keyreverse
+ * Reverse the keyschedule and then reverse the order of schedules
+ * @param tkey_lut
+ * @param key_lut
+ */
 void multi_keyreverse(
-    const uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
+    uint16_t (&tkey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS],
+    uint16_t (& key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
 {
-  uint16_t tkey;
-  for( int j = 0; j < ( CRYPTO_ROUNDS - ( ( CRYPTO_ROUNDS + 1 ) / 2 ) )
+  // reverse key schedule for decryption
+  for( int i = 0; i < CRYPTO_ROUNDS; i++ )
   {
-    for( int i = 0; i < ( FEISTEL_ROUNDS - ( ( FEISTEL_ROUNDS + 1 ) / 2 ) )
+    keyreverse( tkey_lut[i] );
+
+    // now reverse the key schedules themselves
+    for( int j = 0; j < FEISTEL_ROUNDS; j++ )
     {
-      tkey = key_lut[i];
-      key_lut[i] = key_lut[ ( FEISTEL_ROUNDS - 1 ) - i];
-      key_lut[ ( FEISTEL_ROUNDS - 1 ) - i] = tkey;
+      key_lut[abs( i - ( CRYPTO_ROUNDS - 1 ) )][j] = tkey_lut[i][j];
     }
-    _D( for (int i = 0; i < FEISTEL_ROUNDS; i++) fprintf(stdout, "   keyreverse(%d): key_lut[%d] = 0x%02x\n", i, i, key_lut[i]); )
   }
 }
-*/
 
 /**
  * double_init
