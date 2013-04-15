@@ -1,6 +1,13 @@
 #-include ../makefile.init
 
 RM := rm -rf
+CP := cp
+DD := dd
+CKSUM := sha512sum
+CKSUM_DB = CHECKSUMS.SHA512
+CKSUM_FLAGS = -b
+CKSUM_CKFLAGS = --check
+
 TEST_CLEARI_FILE = m.clearI.dd
 TEST_CLEARO_FILE = m.clearO.dd
 TEST_CRYPT_FILE = m.crypt.dd
@@ -74,12 +81,12 @@ cryptalg.o:
 cryptalg_test: cryptalg test_files
 	@echo 'Running binary: ./cryptalg '
 	@$(foreach MB, 1 2 4 8 16 32,\
-		echo 'Running test on: $(MB)$(value TEST_CLEARI_FILE)';\
+		echo 'Running test on: $(MB)m';\
 		./cryptalg $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CRYPT_FILE) $(value TEST_KEY) E;\
 		./cryptalg $(MB)$(value TEST_CRYPT_FILE) $(MB)$(value TEST_CLEARO_FILE) $(value TEST_KEY) D;\
-		md5sum $(MB)m*;\
 	)
-	echo 'Done! '
+	@$(CKSUM) $(CKSUM_CKFLAGS) $(CKSUM_DB);\
+	echo ' '
 
 double_cryptalg: double_cryptalg.o
 	@echo 'Building target: $@'
@@ -94,6 +101,16 @@ double_cryptalg.o:
 	$(CPP) $(CFLAGS) -c ../double_cryptalg.cc -o $@
 	@echo 'Finished building: $@'
 	@echo ' '
+
+double_cryptalg_test: double_cryptalg test_files
+	@echo 'Running binary: ./double_cryptalg '
+	@$(foreach MB, 1 2 4 8 16 32,\
+		echo 'Running test on: $(MB)m';\
+		./double_cryptalg $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CRYPT_FILE) $(value TEST_KEY) E;\
+		./double_cryptalg $(MB)$(value TEST_CRYPT_FILE) $(MB)$(value TEST_CLEARO_FILE) $(value TEST_KEY) D;\
+	)
+	@$(CKSUM) $(CKSUM_CKFLAGS) $(CKSUM_DB);\
+	echo 'Done! '
 
 double_cipher_attack:	double_cipher_attack.o
 	@echo 'Building target: $@'
@@ -120,15 +137,21 @@ clean:
 		double_cryptalg \
 		*$(value TEST_CLEARI_FILE)* \
 		*$(value TEST_CLEARO_FILE)* \
-		*$(value TEST_CRYPT_FILE)*
+		*$(value TEST_CRYPT_FILE)* \
+		$(CKSUM_DB)
 	-@echo ' '
 
 test_files:
-	@echo 'Creating test files.'
+	@echo 'Removing old checksum database: $(CKSUM_DB)'
+	@$(RM) $(CKSUM_DB)
 	@$(foreach MB, 1 2 4 8 16 32,\
-		echo 'Creating test file: $(MB)$(value TEST_CLEARI_FILE)';\
-		dd if=/dev/urandom of=$(MB)$(value TEST_CLEARI_FILE) bs=$(MB)M count=1;\
+		echo 'Creating test file: $(MB)$(value TEST_CLEARI_FILE)' ;\
+		$(DD) if=/dev/urandom of=$(MB)$(value TEST_CLEARI_FILE) bs=$(MB)M count=1 2> /dev/null ;\
+		$(CP) $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CLEARO_FILE) ;\
+		$(CKSUM) $(CKSUM_FLAGS) $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CLEARO_FILE) >> $(CKSUM_DB) ;\
+		$(RM) $(MB)$(value TEST_CLEARO_FILE) ;\
 	)
+	@echo ' '
 
 .PHONY: all clean dependents
 .SECONDARY:
