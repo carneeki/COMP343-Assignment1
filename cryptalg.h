@@ -49,45 +49,30 @@
 using namespace std;
 
 /**
- * key_lut
- * LUT (Look Up Table) for keys in the scheduling algorithm. While slightly more
- * memory intensive (16bits * number of rounds = 128 bits = 16 bytes in default
- * implementation), it means accessing the key for round i is far less CPU
- * intensive (simply look up rather than generate i rounds for each byte to be
- * encrypted). All key rounds are generated prior to an encrypt() or decrypt()
- * operation so they are available for immediate use.
- */
-uint8_t key_lut[FEISTEL_ROUNDS];
-
-/**
  * mode
  * Encrypt vs Decrypt operation. Encrypt = 1. Decrypt = 0;
  */
 bool mode;
 
-/**
- * starting key
- * This is the key that the user enters in the command line argument to
- * encrypt() / decrypt().
- */
-uint16_t starting_key;
+void decrypt( uint8_t, uint8_t &, uint8_t&,
+              const uint16_t (&)[FEISTEL_ROUNDS] );
+void encrypt( uint8_t, uint8_t &, uint8_t&,
+              const uint16_t (&)[FEISTEL_ROUNDS] );
+void help( char*[] );
+void keyreverse( uint16_t (&)[FEISTEL_ROUNDS] );
+void keysched( uint8_t, uint8_t*, uint16_t (&)[FEISTEL_ROUNDS] );
+uint8_t permute( uint8_t, uint8_t );
+uint8_t rol( uint8_t, const uint8_t );
 
-void decrypt(uint8_t, uint8_t &, uint8_t&);
-void encrypt(uint8_t, uint8_t &, uint8_t&);
-void help(char*[]);
-void keyreverse();
-void keysched(uint8_t, uint8_t*);
-uint8_t permute(uint8_t, uint8_t);
-uint8_t rol(uint8_t, const uint8_t);
+uint8_t sbox( uint8_t );
 
-uint8_t sbox(uint8_t);
+uint8_t _hi4( uint8_t );
+uint8_t _lo4( uint8_t );
 
-uint8_t _hi4(uint8_t);
-uint8_t _lo4(uint8_t);
+uint8_t _hi8( uint16_t );
+uint8_t _lo8( uint16_t );
 
-uint8_t _hi8(uint16_t);
-uint8_t _lo8(uint16_t);
-
-bool _init(int, char*, fstream&, ofstream&);
+bool _init( int, char*, fstream&, ofstream&, uint16_t (&),
+            uint16_t (&)[FEISTEL_ROUNDS] );
 
 #endif /* CRYPTALG_H_ */

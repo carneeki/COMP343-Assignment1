@@ -2,7 +2,7 @@
 
 TIMEFORMAT='%3R'
 
-MODE="Release"
+MODE="Debug"
 PROGNAME="cryptalg"
 KEY="0xCAFE"
 

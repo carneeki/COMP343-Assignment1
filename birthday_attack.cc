@@ -64,10 +64,10 @@ struct input_pair
     uint16_t c; // chain variable
 };
 
-int main(int argc, char* argv[])
+int main( int argc, char* argv[] )
 {
 
-  _D(fprintf(stdout, "main(): starting\n");)
+  _D( fprintf(stdout, "main(): starting\n"); )
 
   /**
    * Store hash as h=(m,c) where m = message and c = chaining variable
@@ -78,56 +78,59 @@ int main(int argc, char* argv[])
 
   uint16_t hash;  // combined hash
 
-  uint16_t c; // chain variable
-  uint16_t m; // message
-  uint8_t l; // left message
-  uint8_t r; // right message
+  uint8_t l;  // left message
+  uint8_t r;  // right message
 
-  srand(time(0));
-  while (true)
+  uint16_t key_lut[FEISTEL_ROUNDS]; // key lookup table
+
+  srand( time( 0 ) ); // initialize random seed.
+
+  while( true )
   {
-    c = rand();
+    // clear hash from previous iteration
+    hash = 0;
+
+    hash_input.c = rand();
     l = rand();
     r = rand();
 
-    starting_key = c;
-    keysched(0, key_lut);
+    // generate key schedule for new key
+    keysched( 0, hash_input.c, key_lut );
 
-    hash = 0;
 
-    m = l; // combine left and right parts of message (2*8bits)
-    m = (m << 8) | r;
+    hash_input.m = l; // combine left and right parts of message (2*8bits)
+    hash_input.m = ( hash_input.m << 8 ) | r;
 
     // create the hash
-    encrypt(0, l, r);
+    encrypt( 0, l, r, key_lut );
 
     // combine left and right parts
     hash = l;
-    hash = (hash << 8) | r;
+    hash = ( hash << 8 ) | r;
 
-    _D(fprintf(stdout, "%04x=(%04x,%04x)\n", hash,c,m);)
+    _D( fprintf(stdout, "%04x=(%04x,%04x)\n", hash, hash_input.c, hash_input.m); )
 
-    // store the node in the hash map
-
-    // store message and chaining variables in a struct
-    hash_input.m = m;
-    hash_input.c = c;
-
-    iter = hash_map.find(hash);
-
-    if (iter != hash_map.end())
+    // check for a collision:
+    iter = hash_map.find( hash );
+    if( iter != hash_map.end() )
     {
-      fprintf(stdout,
-          "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision\n",
-          iter->second.m, iter->second.c, hash_input.m, hash_input.c);
-      _D(
-          fprintf(stdout, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision on hash:0x%04x\n", iter->second.m, iter->second.c, hash_input.m, hash_input.c, hash);)
-      _D(fprintf(stdout, "size of hash_map %ld\n", hash_map.size());)
+      // collision detected, print output then exit
+      fprintf( stdout, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision\n",
+               iter->second.m, iter->second.c, hash_input.m, hash_input.c );
+
+      _D( fprintf(stdout, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision on hash:0x%04x\n", iter->second.m, iter->second.c, hash_input.m, hash_input.c, hash); )
+      _D( fprintf(stdout, "size of hash_map %ld\n", hash_map.size()); )
+
+      // exit
       return 0;
     }
+
+    // no collision: store the node in the hash map
     hash_map[hash] = hash_input;
   }
 
-  fprintf(stdout, "No collisions found\n");
-  return 0;
+  // technically this code should be unreachable, but if it does, print
+  // to error output and return a non-zero
+  fprintf( stderr, "No collisions found\n" );
+  return 1;
 }

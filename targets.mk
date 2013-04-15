@@ -63,6 +63,20 @@ cryptalg.o:
 	@echo 'Finished building: $@'
 	@echo ' '
 
+double_cryptalg: double_cryptalg.o
+	@echo 'Building target: $@'
+	@echo 'Invoking: GCC C++ Linker'
+	$(CPP) $(LDFLAGS) $@.o -o $@
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+double_cryptalg.o:
+	@echo 'Building file: ../double_cryptalg.cc'
+	@echo 'Invoking: GCC C++ Compiler'
+	$(CPP) $(CFLAGS) -c ../double_cryptalg.cc -o $@
+	@echo 'Finished building: $@'
+	@echo ' '
+
 double_cipher_attack:	double_cipher_attack.o
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
