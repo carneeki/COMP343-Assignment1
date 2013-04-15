@@ -48,12 +48,6 @@
 
 using namespace std;
 
-/**
- * mode
- * Encrypt vs Decrypt operation. Encrypt = 1. Decrypt = 0;
- */
-bool mode;
-
 void decrypt( uint8_t, uint8_t &, uint8_t&,
               const uint16_t (&)[FEISTEL_ROUNDS] );
 void encrypt( uint8_t, uint8_t &, uint8_t&,

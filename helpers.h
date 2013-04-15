@@ -14,6 +14,7 @@
 
 #include <stdlib.h> // strtoul() - string to unsigned long.
 #include <fstream>  // ifstream
+
 /**
  * Feistel Round - Decrypt
  * Perform all rounds of the cipher as depicted in the Feistel network from the
