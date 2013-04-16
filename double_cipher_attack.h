@@ -31,12 +31,31 @@ struct lr_pair
 {
     uint8_t l; // left part
     uint8_t r; // right part
+    bool operator==( const lr_pair &other ) const
+    {
+      if( ( l == other.l ) && ( r == other.r ) )
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
     bool operator<( const lr_pair &other ) const
     {
-      if( l < other.l && r < other.r ) return true;
-      else if( l == other.l && r < other.r ) return true;
+      if( l < other.l )
+      {
+        return true;
+      }
+      else if( ( l == other.l ) && ( r < other.r ) )
+      {
+        return true;
+      }
       else
+      {
         return false;
+      }
     }
     friend ostream& operator<<( ostream &os, const lr_pair &lr )
     {
@@ -48,7 +67,7 @@ struct lr_pair
 
 /**
  * observation
- * container of message and cryptogram
+ * container of message and cryptogram of 16 bit length
  */
 struct observation
 {
@@ -62,6 +81,57 @@ struct observation
 };
 
 /**
+ * table_idx
+ * Index for multimap tables, 32 bits in length. Can contain a 32 bit cryptogram
+ * or message - designed for holding the middle value for meet in the middle
+ * attack.
+ */
+struct table_idx
+{
+    lr_pair v1; // value 1
+    lr_pair v2; // value 2
+
+    bool operator==( const table_idx &other ) const
+    {
+      if( ( v1 == other.v1 ) && ( v2 == other.v2 ) )
+      {
+        return true;
+      }
+      else if ((v1.l == other.v1.l) || (v2.l == other.v2.l)
+          || (v1.r == other.v1.r) || (v2.r == other.v2.r) )
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    bool operator<( const table_idx &other ) const
+    {
+      if( v1 < other.v1 )
+      {
+        return true;
+      }
+      else if( ( v1 == other.v1 ) && ( v2 < other.v2 ) )
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    friend ostream& operator<<( ostream &os, const table_idx &tbl )
+    {
+      os << tbl.v1 << " " << tbl.v2;
+      return os;
+    }
+};
+
+/**
  * key_pair
  * Hold 2 keys, k1 and k2 together
  */
@@ -69,10 +139,18 @@ struct key_pair
 {
     uint16_t k1; // key1
     uint16_t k2; // key2
+    bool operator<( const key_pair &kp ) const
+    {
+      if( k1 < kp.k1 ) return true;
+      else if( ( k1 == kp.k1 ) && ( k2 < kp.k2 ) ) return true;
+      else
+        return false;
+    }
     friend ostream& operator<<( ostream &os, const key_pair &kp )
     {
-      os << "0x" << setfill( '0' ) << setw( 4 ) << hex << (int) kp.k1 << ", "
-         << "0x" << setfill( '0' ) << setw( 4 ) << hex << (int) kp.k2;
+      os << "0x" << setfill( '0' ) << setw( 4 ) << hex << (long int) kp.k1
+         << ", " << "0x" << setfill( '0' ) << setw( 4 ) << hex
+         << (long int) kp.k2;
       return os;
     }
 };
@@ -110,6 +188,43 @@ void generate_observations( observation (&ob)[CRYPTO_ROUNDS] )
     // copy the messag to the cryptogram space so multi_feistels does not
     // clobber them in the pass by reference
     ob[i].c = ob[i].m;
+  }
+}
+
+void multimap_intersect( const multimap<table_idx, uint16_t> &T_e,
+                         const multimap<table_idx, uint16_t> &T_d,
+                         multimap<table_idx, key_pair> &T_k )
+{
+  multimap<table_idx, uint16_t>::const_iterator it_e; // iterator T_e
+  multimap<table_idx, uint16_t>::const_iterator it_d; // iterator T_e
+
+  key_pair kp; // key pair from T_e and T_d
+
+  for( it_e = T_e.begin(); it_e != T_e.end(); ++it_e )
+  {
+//    cout << "iterating it_e: " << it_e->first << endl;
+    for( it_d = T_d.equal_range( it_e->first ).first;
+         it_d!= T_d.equal_range( it_e->first ).second; ++it_d )
+    {
+      // if it_d idx matches it_e idx, add to T_k
+      cout << "iterating it_e:it_d " << it_e->first << " : " << it_d->first
+           << endl;
+      if( it_e->first == it_d->first )
+      {
+        kp.k1 = it_e->second;
+        kp.k2 = it_d->second;
+        T_k.insert( std::pair<table_idx, key_pair>( it_e->first, kp ) );
+      }
+    }
+  }
+}
+
+void keypair_print( const multimap<table_idx, key_pair> &T_k )
+{
+  multimap<table_idx, key_pair>::const_iterator it_k; // iterator T_k
+  for( it_k = T_k.begin(); it_k != T_k.end(); ++it_k )
+  {
+    cout << "k1,k2 " << it_k->second << endl;
   }
 }
 

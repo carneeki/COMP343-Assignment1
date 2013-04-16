@@ -94,61 +94,83 @@ using namespace std;
 int main( int argc, char* argv[] )
 {
   // multimap allows for collisions
-  multimap<lr_pair, key_pair> cpts; // msg as index, key+cryptogram as val
-  multimap<lr_pair, key_pair> msgs; // cpt as index, key+message as val
+  multimap<table_idx, uint16_t> T_e; // all k_1: (c_mid) as index
+  multimap<table_idx, uint16_t> T_d; // all k_2: (c_mid) as index
+  multimap<table_idx, key_pair> T_k; // all key collisions
 
-  observation ob[CRYPTO_ROUNDS]; // observations
-  observation mid; // recycle temporary observations memory
-
+  table_idx tmp_idx;
+  observation ob[CRYPTO_ROUNDS];  // observations
+  observation mid[CRYPTO_ROUNDS]; /* recycle temporary observations memory,
+                                   * is also our 'concatenated' observation.
+                                   */
   generate_observations( ob );
   encrypt_observations( ob );
 
-  for(int i = 0; i < CRYPTO_ROUNDS; i++)
+  for( int i = 0; i < CRYPTO_ROUNDS; i++ )
   {
-    cout << ob[i] << endl;
+    cout << "ob[" << i << "] MM MM CC CC : " << ob[i] << endl;
   }
 
   // brute force all keys
   for( uint16_t i = 0; i < 0xFFFF; i++ )
   {
+    _D(
+    if(i % 0x100 == 0)
+    {
+      cout << "brute forcing key: " << i << endl;
+    }
+    );
     uint16_t ekey_lut[FEISTEL_ROUNDS];
     uint16_t dkey_lut[FEISTEL_ROUNDS];
 
     keysched( 0, i, ekey_lut ); // key schedule for k_i
     keyreverse( ekey_lut, dkey_lut );
 
-    mid.m = ob[0].m; // copy msg to msg space and cryptogram
-    mid.c = ob[0].m; // space to save from feistel() clobbering msg
-    // brute force encrypt all m_{0,1} for k_{0x0000,FFFE}
-    feistel( 0, mid.c.l, mid.c.r, ekey_lut );
+    // process bigger block iteratively (as if it were 4 separate
+    // bytes in a file)
+    for( uint8_t j = 0; j < CRYPTO_ROUNDS; j++ )
+    {
+      mid[j].m = ob[j].m;
+      mid[j].c = ob[j].m;
+      // brute force encrypt all m_{0,1} for k_{0x0000,FFFE}
+      feistel( 0, mid[j].m.l, mid[j].m.r, ekey_lut );
+
+      // brute force decrypt all m_{0,1} for k_{0x0000,FFFE}
+      feistel( 0, mid[j].c.l, mid[j].c.r, dkey_lut );
+    }
 
     // store tmp_ob.c => c_mid<[c],[c,k_i]>
+    // note: m is now c_a <-- encrypt
+    // note: c is now c_a <-- decrypt
+    tmp_idx.v1 = mid[0].m;
+    tmp_idx.v2 = mid[1].m;
+    T_e.insert( pair<table_idx, uint16_t>( tmp_idx, i ) );
 
+    _D(
+    if(i % 0x100 == 0)
+    {
+      cout << "tmp_idx key(" << i <<") = " << tmp_idx << endl;
+    });
 
-    mid.m = ob[0].c; // copy cryptogram to cryptograms space and msg
-    mid.c = ob[0].c; // space to save from feistel() clobbering cryptogram
-    // brute force decrypt all c_{a} for k_{0x0000,FFFE}
-    feistel( 0, mid.m.l, mid.m.r, dkey_lut );
+    tmp_idx.v1 = mid[0].c;
+    tmp_idx.v2 = mid[1].c;
+    T_d.insert( pair<table_idx, uint16_t>( tmp_idx, i ) );
 
-    // store tmp_ob.m => m_mid<[m],[c_1
-
-    // now look for matches between c_a=E(m_1*k_1) and c_a=D(c_1*k_2)
-    // this will be a short list, note k_1 and k_2 of interest
-
-    // use the shortlist of k_1 and k_2 to do a micro-brute force
-    // ie: test for c_2 = E_k_2(E_k_1(m_2))
+    _D(
+    if(i == 0xFFFE)
+    {
+      cout << "brute forcing key: " << i << endl;
+    });
   }
 
-  // generate all keys for c1, c2
+  // now look for matches between c_a=E(m_1*k_1) and c_a=D(c_1*k_2)
+  // this will be a short list, note k_1 and k_2 of interest
+  multimap_intersect( T_e, T_d, T_k );
 
+  keypair_print(T_k);
 
-  for( multimap<lr_pair, key_pair>::iterator it = msgs.begin();
-      it != msgs.end(); ++it )
-  {
-    cout << (*it).first
-         << " = "
-         << (*it).second << endl;
-  }
-  // look for matches on E_1(m_1) = D_2(c_1)
+  // use the shortlist of k_1 and k_2 to do a micro-brute force
+  // ie: test for c_2 = E_k_2(E_k_1(m_2))
+  // look for matches on E_1(m_1) = D_2(c_1)S
   return 0;
 }
