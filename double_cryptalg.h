@@ -56,21 +56,14 @@ void multi_feistel( uint8_t (&Li), uint8_t (&Ri),
  * @param ekey_lut LUT for encryption keyschedule
  * @param dkey_lut LUT for decryption keyschedule
  */
-void multi_keyreverse(
-    uint16_t (&ekey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS],
-    uint16_t (&dkey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
+void multi_keyreverse( uint16_t (&ekey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS],
+                       uint16_t (&dkey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
 {
   // reverse key schedule for decryption
   for( int i = 0; i < CRYPTO_ROUNDS; i++ )
-  {
-    keyreverse( ekey_lut[i] );
-
-    // now reverse the key schedules themselves
     for( int j = 0; j < FEISTEL_ROUNDS; j++ )
-    {
-      dkey_lut[abs( i - ( CRYPTO_ROUNDS - 1 ) )][j] = ekey_lut[i][j];
-    }
-  }
+      dkey_lut[abs( i - ( CRYPTO_ROUNDS - 1 ) )][abs(
+          j - ( FEISTEL_ROUNDS - 1 ) )] = ekey_lut[i][j];
 }
 
 /**

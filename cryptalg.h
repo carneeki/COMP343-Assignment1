@@ -51,7 +51,8 @@ using namespace std;
 void feistel( uint8_t, uint8_t &, uint8_t&,
               const uint16_t (&)[FEISTEL_ROUNDS] );
 void help( char*[] );
-void keyreverse( uint16_t (&)[FEISTEL_ROUNDS] );
+void keyreverse( const uint16_t (&)[FEISTEL_ROUNDS],
+                 uint16_t (&)[FEISTEL_ROUNDS] );
 void keysched( uint8_t, uint8_t*, uint16_t (&)[FEISTEL_ROUNDS] );
 uint8_t permute( uint8_t, uint8_t );
 uint8_t rol( uint8_t, const uint8_t );

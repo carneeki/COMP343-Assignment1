@@ -79,18 +79,6 @@ int main( int argc, char* argv[] )
     // reverse key schedule for decryption
     multi_keyreverse(ekey_lut,dkey_lut);
   }
-  else
-  {
-    // no reversing needed, just a plain copy
-    // TODO: see if we can save an extra 128 bytes by not having to copy...
-    for( int i = 0; i < CRYPTO_ROUNDS; i++ )
-    {
-      for( int j = 0; j < FEISTEL_ROUNDS; j++ )
-      {
-        dkey_lut[i][j] = ekey_lut[i][j];
-      }
-    }
-  }
 
   _D( fprintf(stderr, "EKey schedule:\n"); for(int i=0; i < CRYPTO_ROUNDS; i++) { for( int j = 0; j < FEISTEL_ROUNDS; j++ ) { fprintf(stderr,"ekey_lut[%d][%d] = %02x\n",i,j,ekey_lut[i][j]); } } );
   _D( fprintf(stderr, "DKey schedule:\n"); for(int i=0; i < CRYPTO_ROUNDS; i++) { for( int j = 0; j < FEISTEL_ROUNDS; j++ ) { fprintf(stderr,"dkey_lut[%d][%d] = %02x\n",i,j,dkey_lut[i][j]); } } );

@@ -46,6 +46,20 @@ endif
 # All Target
 all: birthday_attack cryptalg
 
+sample_birthday: sample_birthday.o
+	@echo 'Building target: $@'
+	@echo 'Invoking: GCC C++ Linker'
+	$(CPP) $(LDFLAGS) $@.o -o $@
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+sample_birthday.o:
+	@echo 'Building file: ../sample_birthday.cc'
+	@echo 'Invoking: GCC C++ Compiler'
+	$(CPP) $(CFLAGS) -c ../sample_birthday.cc -o $@
+	@echo 'Finished building: $@'
+	@echo ' '
+
 birthday_attack: birthday_attack.o
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
@@ -127,6 +141,10 @@ double_cipher_attack.o:
 	@echo 'Finished building: $@'
 	@echo ' '
 
+double_cipher_attack_test: double_cipher_attack
+	@echo 'TODO!'
+	@echo ' '
+
 # Other Targets
 clean:
 	-$(RM) \
@@ -141,6 +159,8 @@ clean:
 		*$(value TEST_CRYPT_FILE)* \
 		$(CKSUM_DB)
 	-@echo ' '
+
+test_all: cryptalg_test birthday_attack_test double_cryptalg_test double_cipher_attack_test
 
 test_files:
 	@echo 'Removing old checksum database: $(CKSUM_DB)'

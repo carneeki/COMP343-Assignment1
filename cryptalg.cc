@@ -46,7 +46,8 @@ int main( int argc, char* argv[] )
    * encrypted). All key rounds are generated prior to an encrypt() or decrypt()
    * operation so they are available for immediate use.
    */
-  uint16_t key_lut[FEISTEL_ROUNDS]; // key lookup table
+  uint16_t ekey_lut[FEISTEL_ROUNDS]; // encryption key lookup table
+  uint16_t dkey_lut[FEISTEL_ROUNDS]; // decryption key lookup table
 
   /**
    * starting_key
@@ -67,12 +68,12 @@ int main( int argc, char* argv[] )
   // mode to determine if we are encrypting / decrypting, assigned by _init()
   bool mode;
 
-  _init( argc, argv, in, out, starting_key, key_lut, mode );
+  _init( argc, argv, in, out, starting_key, ekey_lut, mode );
 
   if(!mode)
   {
     // reverse key schedule for decryption
-    keyreverse(key_lut);
+    keyreverse(ekey_lut,dkey_lut);
   }
 
   /* read input file block by block to conserve memory for large files
@@ -92,12 +93,12 @@ int main( int argc, char* argv[] )
     if( mode )
     {
       // encrypt
-      feistel( 0, buf[0], buf[1], key_lut );
+      feistel( 0, buf[0], buf[1], ekey_lut );
     }
     else
     {
       // decrypt
-      feistel( 0, buf[1], buf[0], key_lut );
+      feistel( 0, buf[1], buf[0], dkey_lut );
     }
     _D(
         fprintf(stderr, "          main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]);

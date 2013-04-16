@@ -14,7 +14,6 @@
 
 #include <stdlib.h> // strtoul() - string to unsigned long.
 #include <fstream>  // ifstream
-
 /**
  * Feistel Round - feistel
  * Perform all rounds of the cipher as depicted in the Feistel network from the
@@ -27,10 +26,7 @@
 void feistel( uint8_t f_round, uint8_t &Li, uint8_t &Ri,
               const uint16_t (&key_lut)[FEISTEL_ROUNDS] )
 {
-  _D(
-      fprintf(stderr, "      encrypt(%d): starting\n", f_round);
-      fprintf(stderr, "                : Li = 0x%2x\n", Li);
-  );
+  _D( fprintf(stderr, "      encrypt(%d): starting\n", f_round); fprintf(stderr, "                : Li = 0x%2x\n", Li); );
 
   // check we are not doing too many rounds
   if( f_round == FEISTEL_ROUNDS )
@@ -56,13 +52,7 @@ void feistel( uint8_t f_round, uint8_t &Li, uint8_t &Ri,
   // F-BOX :: START
   // 1. Ri XOR Ki
   tmp = ( Ri ^ key_lut[f_round] );
-  _D(
-      fprintf(stderr, "                : Ri ^ Ki = 0x%02x ^\n                :           0x%02x\n",Ri, key_lut[f_round]);
-      bitset<8> bRi(Ri);
-      bitset<8> bKi(key_lut[f_round]);
-      bitset<8> btmp(tmp);
-      cerr << "                :         = " << bRi << " ^" << endl <<"                :           " << bKi << endl << "                :         = " << btmp << endl;
-  );
+  _D( fprintf(stderr, "                : Ri ^ Ki = 0x%02x ^\n                :           0x%02x\n",Ri, key_lut[f_round]); bitset<8> bRi(Ri); bitset<8> bKi(key_lut[f_round]); bitset<8> btmp(tmp); cerr << "                :         = " << bRi << " ^" << endl <<"                :           " << bKi << endl << "                :         = " << btmp << endl; );
 
   // 2. sbox lo and hi nibble
   // 3. combine nibbles and permute
@@ -72,15 +62,7 @@ void feistel( uint8_t f_round, uint8_t &Li, uint8_t &Ri,
   // 4. RiNext = Li XOR permute
   // 5. LiNext = Ri... Just pass Ri
   next = Li ^ tmp;
-  _D(
-      bitset<8> bLi(Li);
-      btmp = bitset<8>(tmp);
-      bitset<8> bNext(next);
-      fprintf(stderr, "      encrypt(%d): next = Li ^ tmp\n", f_round);
-      cerr << "                : " << bLi << " ^" << endl;
-      cerr << "                : " << btmp        << endl;
-      cerr << "                : " << bNext       << endl;
-  );
+  _D( bitset<8> bLi(Li); btmp = bitset<8>(tmp); bitset<8> bNext(next); fprintf(stderr, "      encrypt(%d): next = Li ^ tmp\n", f_round); cerr << "                : " << bLi << " ^" << endl; cerr << "                : " << btmp << endl; cerr << "                : " << bNext << endl; );
 
   // call recursively, but not too many times
   if( f_round + 1 < FEISTEL_ROUNDS )
@@ -109,25 +91,21 @@ void help( char* argv[] )
  * Reverse the key schedule for decryption
  * @param key_lut
  */
-void keyreverse( uint16_t (&key_lut)[FEISTEL_ROUNDS] )
+void keyreverse( const uint16_t (&ekey_lut)[FEISTEL_ROUNDS],
+                 uint16_t (&dkey_lut)[FEISTEL_ROUNDS] )
 {
-  uint8_t tkey;            // temporary placeholder for key reversal
-
   _D( fprintf(stdout, "    keyreverse(): starting\n"); )
 
   /*****************************************************************************
    *         Important difference between encryption and decryption:
    *                       REVERSE THE KEY SCHEDULE!
    ****************************************************************************/
-  for( int i = 0; i < ( FEISTEL_ROUNDS - ( ( FEISTEL_ROUNDS + 1 ) / 2 ) ); i++ )
+  for( int i = 0; i < FEISTEL_ROUNDS; i++ )
   {
-    tkey = key_lut[i];
-    key_lut[i] = key_lut[ ( FEISTEL_ROUNDS - 1 ) - i];
-    key_lut[ ( FEISTEL_ROUNDS - 1 ) - i] = tkey;
+    dkey_lut[abs( i - ( FEISTEL_ROUNDS - 1 ) )] = ekey_lut[i];
   }
 
-  _D( for (int i = 0; i < FEISTEL_ROUNDS; i++) fprintf(stdout, "   keyreverse(%d): key_lut[%d] = 0x%02x\n", i, i, key_lut[i]); )
-
+  _D( for (int i = 0; i < FEISTEL_ROUNDS; i++) { fprintf( stdout, "   keyreverse(%d): ekey_lut[%d] = 0x%02x\n", i, i, ekey_lut[i] ); fprintf( stdout, "   keyreverse(%d): ekey_lut[%d] = 0x%02x\n", i, i, dkey_lut[i] ); } );
 }
 
 /**
@@ -143,7 +121,7 @@ void keysched( uint8_t round, const uint16_t &starting_key,
 
   _D( fprintf(stdout, "     keysched(%d): starting", round); )
 
-  // check we are not generating too many keys
+// check we are not generating too many keys
   if( round == FEISTEL_ROUNDS )
   {
     return;
@@ -164,7 +142,7 @@ void keysched( uint8_t round, const uint16_t &starting_key,
   }
   _D( fprintf(stdout, " : key_lut[%d] = 0x%02x\n", round, key_lut[round]); )
 
-  // call recursively, but not too many times
+// call recursively, but not too many times
   if( round + 1 < FEISTEL_ROUNDS )
   {
     keysched( round + 1, starting_key, key_lut );
@@ -183,24 +161,13 @@ void keysched( uint8_t round, const uint16_t &starting_key,
 uint8_t permute( uint8_t hi, uint8_t lo )
 {
 
-  _D(
-      std::bitset<8> bHi(hi);
-      std::bitset<8> bLo(lo);
-      cerr << "       permute(): "                  << endl;
-      cerr << "                :       hi: " << bHi << endl;
-      cerr << "                :       lo: " << bLo << endl;
-  );
+  _D( std::bitset<8> bHi(hi); std::bitset<8> bLo(lo); cerr << "       permute(): " << endl; cerr << "                :       hi: " << bHi << endl; cerr << "                :       lo: " << bLo << endl; );
 
-  // combine nibbles to get byte
+// combine nibbles to get byte
   uint8_t combined = ( ( hi << 4 ) | lo );
   uint8_t rolCombined = rol( 2, combined );
 
-  _D(
-      std::bitset<8> bCombined(combined);
-      std::bitset<8> bRolCombined(rolCombined);
-      cerr << "                : combined: " << bCombined    << endl;
-      cerr << "                :  rotated: " << bRolCombined << endl;
-  );
+  _D( std::bitset<8> bCombined(combined); std::bitset<8> bRolCombined(rolCombined); cerr << "                : combined: " << bCombined << endl; cerr << "                :  rotated: " << bRolCombined << endl; );
 
   return rolCombined;
 }
@@ -244,11 +211,11 @@ uint8_t rol( uint8_t shift, const uint8_t input )
  */
 uint16_t _hi16( uint32_t input )
 {
-  // 1234567890ABCDEF 1234567890ABCDEF
-  // ****************                  <- we want this part
-  // 0101010101010101 xxxxxxxxxxxxxxxx >> 16
-  // 0000000000000000 0101010101010101
-  // =
+// 1234567890ABCDEF 1234567890ABCDEF
+// ****************                  <- we want this part
+// 0101010101010101 xxxxxxxxxxxxxxxx >> 16
+// 0000000000000000 0101010101010101
+// =
   return ( input >> 16 );
 }
 
@@ -267,7 +234,7 @@ uint16_t _lo16( uint32_t input )
    * =
    * 0000000000000000 0101010101010101 cast and return this
    */
-  return (uint16_t) (input & 0xFFFF);
+  return (uint16_t) ( input & 0xFFFF );
 }
 
 /**
@@ -303,7 +270,7 @@ uint8_t _lo8( uint16_t input )
    * =
    * 00000000 01010101 cast and return this
    */
-  return (uint16_t) (input & 0xFF);
+  return (uint16_t) ( input & 0xFF );
 }
 
 /**
@@ -320,11 +287,7 @@ uint8_t _hi4( uint8_t input )
    * 0000 0101
    * =
    */
-  _D(
-      std::bitset<8> bInput(input);
-      std::bitset<8> bOutput(input >> 4);
-      cerr << "          _hi4(): " << bInput << endl << "                : " << bOutput << endl;
-  );
+  _D( std::bitset<8> bInput(input); std::bitset<8> bOutput(input >> 4); cerr << "          _hi4(): " << bInput << endl << "                : " << bOutput << endl; );
   return ( input >> 4 );
 }
 
@@ -343,13 +306,9 @@ uint8_t _lo4( uint8_t input )
    * =
    * 0000 0101 return this
    */
-  _D(
-      std::bitset<8> bInput(input);
-      std::bitset<8> bOutput(input & 0xF );
-      cerr << "          _lo4(): " << bInput << endl << "                : " << bOutput << endl;
-  );
+  _D( std::bitset<8> bInput(input); std::bitset<8> bOutput(input & 0xF ); cerr << "          _lo4(): " << bInput << endl << "                : " << bOutput << endl; );
 
-  return (input & 0xF);
+  return ( input & 0xF );
 }
 
 bool _init( int argc, char* argv[], fstream &in, ofstream &out,
@@ -359,7 +318,7 @@ bool _init( int argc, char* argv[], fstream &in, ofstream &out,
 
   _D( fprintf(stdout, "         _init(): starting\n"); )
 
-  // Show a friendly help message
+// Show a friendly help message
   if( argc != 5 )
   {
     help( argv );
@@ -378,7 +337,7 @@ bool _init( int argc, char* argv[], fstream &in, ofstream &out,
   in.open( strin, ios::binary | ios::in | ios::out | ios::ate );
   out.open( strout, ios::binary | ios::out | ios::trunc );
 
-  // do sanity checks on files now
+// do sanity checks on files now
   if( !in.good() )
   {
     fprintf( stderr, "FATAL: input file %s could not be opened. Quitting.\n",
@@ -399,7 +358,7 @@ bool _init( int argc, char* argv[], fstream &in, ofstream &out,
     exit( EXIT_FAILURE );
   }
 
-  // assume input files are openable
+// assume input files are openable
   if( ( *oper == 'E' ) || ( *oper == 'e' ) )
   {
     mode = 1;
