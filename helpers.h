@@ -21,6 +21,68 @@
 #include <ctime>    // time
 
 /**
+ * lr_pair
+ * A pairing of a cryptogram or message (left+right parts) to form an index for
+ * mapping either messages or cryptograms with key_pairs
+ */
+struct lr_pair
+{
+    uint8_t l; // left part
+    uint8_t r; // right part
+
+    bool operator==( const lr_pair &other ) const
+    {
+      return ( ( l == other.l ) && ( r == other.r ) );
+    }/* operator== */
+
+    bool operator<( const lr_pair &other ) const
+    {
+      if( l < other.l )
+        return true;
+      else if( ( l == other.l ) && ( r < other.r ) )
+        return true;
+      else
+        return false;
+    } /* operator< */
+
+    friend std::ostream& operator<<( ostream &os, const lr_pair &lr )
+    {
+      os << "0x" << setfill( '0' ) << setw( 2 ) << hex << (int) lr.l
+         << " "
+         << "0x" << setfill( '0' ) << setw( 2 ) << hex << (int) lr.r;
+      return os;
+    } /* operator<< */
+};
+
+/**
+ * key_pair
+ * Hold 2 keys, k1 and k2 together
+ */
+struct key_pair
+{
+    uint16_t k1; // key 1
+    uint16_t k2; // key 2
+
+    bool operator<( const key_pair &kp ) const
+    {
+      if( k1 < kp.k1 )
+        return true;
+      else if( ( k1 == kp.k1 ) && ( k2 < kp.k2 ) )
+        return true;
+      else
+        return false;
+    } /* operator< */
+
+    friend ostream& operator<<( ostream &os, const key_pair &kp )
+    {
+      os << "0x" << setfill( '0' ) << setw( 4 ) << hex << (long int) kp.k1
+         << " " << "0x" << setfill( '0' ) << setw( 4 ) << hex
+         << (long int) kp.k2;
+      return os;
+    } /* operator<< */
+}; /* struct key_pair */
+
+/**
  * Feistel Round - feistel
  * Perform all rounds of the cipher as depicted in the Feistel network from the
  * assignment. This is a recursive algorithm.
@@ -29,7 +91,7 @@
  * @param right
  * @param key_lut
  */
-void feistel( uint8_t f_round, uint8_t &Li, uint8_t &Ri,
+void feistel( uint8_t f_round, uint8_t &l, uint8_t &r,
               const uint16_t (&key_lut)[FEISTEL_ROUNDS] );
 
 /**
@@ -137,19 +199,18 @@ uint8_t _lo8( uint16_t input );
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void feistel( uint8_t f_round, uint8_t &Li, uint8_t &Ri,
+void feistel( uint8_t f_round, uint8_t &l, uint8_t &r,
               const uint16_t (&key_lut)[FEISTEL_ROUNDS] )
 {
   _D(
       fprintf( stderr, "      encrypt(%d): starting\n", f_round );
-      fprintf( stderr, "                : Li = 0x%2x\n", Li );
+      fprintf( stderr, "                : Li = 0x%2x\n", l );
   ); /* _D() */
 
   // check we are not doing too many rounds
   if( f_round == FEISTEL_ROUNDS )
     return;
 
-  uint8_t next; // Li_Next or Ri_Next (depends on encrypt vs decrypt)
   uint8_t tmp;  // temporary scratch space
 
   /* Encrypt:
@@ -166,13 +227,13 @@ void feistel( uint8_t f_round, uint8_t &Li, uint8_t &Ri,
 
   // F-BOX :: START
   // 1. Ri XOR Ki
-  tmp = ( Ri ^ key_lut[f_round] );
+  tmp = ( r ^ key_lut[f_round] );
 
   _D(
       fprintf(
           stderr, "                : Ri ^ Ki = 0x%02x ^\n                :           0x%02x\n",
-          Ri, key_lut[f_round]);
-      std::bitset<8> bRi(Ri);
+          r, key_lut[f_round]);
+      std::bitset<8> bRi(r);
       std::bitset<8> bKi(key_lut[f_round]);
       std::bitset<8> btmp(tmp);
       cerr << "                :         = " << bRi << " ^" << endl
@@ -182,30 +243,27 @@ void feistel( uint8_t f_round, uint8_t &Li, uint8_t &Ri,
 
   // 2. sbox lo and hi nibble
   // 3. combine nibbles and permute
-  tmp = permute( sbox( _hi4( tmp ) ), sbox( _lo4( tmp ) ) );
-  // F-BOX :: END
-
   // 4. RiNext = Li XOR permute
-  // 5. LiNext = Ri... Just pass Ri
-  next = Li ^ tmp;
+  // 5. LiNext = Ri
+  l = l ^ permute( sbox( _hi4( tmp ) ), sbox( _lo4( tmp ) ) );
 
   _D(
-      bitset<8> bLi(Li);
+      bitset<8> bLi(l);
       btmp = bitset<8>(tmp);
-      bitset<8> bNext(next);
       fprintf(stderr, "      encrypt(%d): next = Li ^ tmp\n", f_round);
       cerr << "                : " << bLi << " ^"
-           << "                : " << btmp
-           << "                : " << bNext << endl;
+           << "                : " << btmp  << endl;
   ); /* _D() */
 
   // call recursively, but not too many times
+  // and swap our left and rights!
   if( f_round + 1 < FEISTEL_ROUNDS )
-    feistel( f_round + 1, Ri, next, key_lut );
+    feistel( f_round + 1, r, l, key_lut );
 
   // update 'return' references
-  Li = Ri;
-  Ri = next;
+//  l = r;
+//  r = tmp;
+
 } /* feistel() */
 
 void keyreverse( const uint16_t (&ekey_lut)[FEISTEL_ROUNDS],

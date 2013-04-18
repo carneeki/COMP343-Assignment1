@@ -30,41 +30,45 @@ as makefile includes that are required for building binaries and test cases.
 │   ├── makefile            - GNU Makefile for release builds
 │   └── subdir.mk           - Release build specific directives
 ├── birthday_attack.cc      - Birthday attack implementation for part (2)
+├── birthday_attack.h       - Birthday attack header file.
 ├── cryptalg.cc             - Cryptographic algorithm for part (1)
 ├── cryptalg.h              - Header file for cryptographic algorithm part(1)
 ├── double_cipher_attack.cc - Meet-in-the-middle attack for part (3b)
 ├── double_cipher_attack.h  - Header file for part (3b)
 ├── double_cryptalg.cc      - Double encryption for part (3a)
 ├── double_cryptalg.h       - Header file for part (3a)
+├── globals.h               - Global definitions such as DEBUG macro _D().
 ├── helpers.h               - Helper functions which were common for most of the
 │                             project
 ├── init.mk                 - Makefile initializer
 ├── README.txt              - This file.
 ├── targets.mk              - Targets (outlined in Makefile Instructions)
 ├── .cproject               - Eclipse project details
-└── .projects               - more Eclipse specific stuff... just ignore
+├── .projects               -  "    "    "    "    "
+└── .settings               -  "    "    "    "    "
 
 ##############################################################################  
 # Makefile Instructions
 ##############################################################################
-make all        - will make all targets except for test cases
-make test_files - will make test case files using the dd command to generate
-                  random binary data.
-make test_all   - make all binaries and run all tests
+make all           - Make all targets except for test cases
+make test_files    - Make test case files using the dd command to generate
+                     random binary data.
+make test_file_big - Generate a 1GB file
+make test_all      - Make all binaries and run all tests (except big tests)
 
-make cryptalg      - part (1) of the assignment
-make cryptalg_test - test part (1) by calling the cryptalg binary with a
+make cryptalg      - Part (1) of the assignment
+make cryptalg_test - Test part (1) by calling the cryptalg binary with a
                      checksum command to check that the file, once encrypted and
                      subsequently decrypted matches the original clear file
                      (sha512sum used by default, can be changed by modifying the
                      CKSUM variable in the make file)
-make birthday_attack      - part (2) of the assignment
-make birthday_attack_test - test part(2) by running the ./birthday_attack binary
-make double_cryptalg      - part (3a) of the assignment
-make double_cryptalg_test - test part (3a) of the assignment much the same way
+make birthday_attack      - Part (2) of the assignment
+make birthday_attack_test - Test part(2) by running the ./birthday_attack binary
+make double_cryptalg      - Part (3a) of the assignment
+make double_cryptalg_test - Test part (3a) of the assignment much the same way
                             cryptalg_test operates.
-make double_cipher_attack      - part (3b) of the assignment
-make double_cipher_attack_test - test part (3b) of the assignment much the same
+make double_cipher_attack      - Part (3b) of the assignment
+make double_cipher_attack_test - Test part (3b) of the assignment much the same
                                  way the birthday attack test works.
 
 ##############################################################################

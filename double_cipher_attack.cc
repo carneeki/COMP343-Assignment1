@@ -101,7 +101,7 @@ int main( int argc, char* argv[] )
 {
   // multimap allows for collisions
   // although, in theory there should few if any collisions
-  // in the improved 2^32 space
+  // in the expanded 2^32 space
   multimap<table_idx, uint16_t> T_e; // all k_1: (c_mid) as index
   multimap<table_idx, uint16_t> T_d; // all k_2: (c_mid) as index
   multimap<table_idx, key_pair> T_k; // all key collisions
@@ -172,4 +172,4 @@ int main( int argc, char* argv[] )
   shortlist_attack(T_k, ob);
 
   return 0;
-}
+} /* main() */

@@ -5,6 +5,7 @@ TEST_CLEARO_FILE = m.clearO.dd
 TEST_CRYPT_FILE = m.crypt.dd
 TEST_KEY = 0xCAFE
 TEST_DOUBLE_KEY = 0xFEEDCAFE
+TEST_BIG_FILESIZE = 1024
 # All of the sources participating in the build are defined here
 #-include sources.mk
 #-include subdir.mk
@@ -88,11 +89,23 @@ cryptalg.o:
 cryptalg_test: cryptalg test_files
 	@echo 'Running binary: ./cryptalg '
 	@$(foreach MB, 1 2 4 8 16 32,\
-		echo 'Running test on: $(MB)m';\
-		./cryptalg $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CRYPT_FILE) $(value TEST_KEY) E;\
-		./cryptalg $(MB)$(value TEST_CRYPT_FILE) $(MB)$(value TEST_CLEARO_FILE) $(value TEST_KEY) D;\
+		echo -n 'Running encrypt on: $(MB)m';\
+		$(TIME) $(TIMEFORMAT) $(NICE) $(NICE_LVL) ./cryptalg $(MB)$(value TEST_CLEARI_FILE) $(MB)$(value TEST_CRYPT_FILE) $(value TEST_KEY) E;\
+		echo ' ';\
+		echo -n 'Running decrypt on: $(MB)m';\
+		$(TIME) $(TIMEFORMAT) $(NICE) $(NICE_LVL) ./cryptalg $(MB)$(value TEST_CRYPT_FILE) $(MB)$(value TEST_CLEARO_FILE) $(value TEST_KEY) D;\
+		echo ' ';\
 	)
 	@$(CKSUM) $(CKSUM_CKFLAGS) $(CKSUM_DB);\
+	echo ' '
+
+cryptalg_test_big: cryptalg test_file_big
+	@echo 'Running binary: ./cryptalg '
+	echo -n 'Running encrypt on: $(value TEST_BIG_FILESIZE)m';\
+	$(TIME) $(TIMEFORMAT) $(NICE) $(NICE_LVL) ./cryptalg $(value TEST_BIG_FILESIZE)$(value TEST_CLEARI_FILE) $(value TEST_BIG_FILESIZE)$(value TEST_CRYPT_FILE) $(value TEST_KEY) E
+	echo -n 'Running decrypt on: $(value TEST_BIG_FILESIZE)m';\
+	$(TIME) $(TIMEFORMAT) $(NICE) $(NICE_LVL) ./cryptalg $(value TEST_BIG_FILESIZE)$(value TEST_CRYPT_FILE) $(value TEST_BIG_FILESIZE)$(value TEST_CLEARO_FILE) $(value TEST_KEY) D
+	@$(CKSUM) $(value TEST_BIG_FILESIZE)$(value TEST_CLEARI_FILE) $(value TEST_BIG_FILESIZE)$(value TEST_CLEARO_FILE)
 	echo ' '
 
 double_cryptalg: double_cryptalg.o
@@ -147,14 +160,25 @@ clean:
 		cryptalg \
 		double_cipher_attack \
 		double_cryptalg \
-		*$(value TEST_CLEARI_FILE)* \
-		*$(value TEST_CLEARO_FILE)* \
-		*$(value TEST_CRYPT_FILE)* \
-		$(CKSUM_DB) \
+		*$(value TEST_CLEARI_FILE) \
+		*$(value TEST_CLEARO_FILE) \
+		*$(value TEST_CRYPT_FILE) \
+		*$(CKSUM_DB) \
 		SSH_*
 	-@echo ' '
 
-test_all: clean cryptalg_test birthday_attack_test double_cryptalg_test double_cipher_attack_test
+test_all: clean cryptalg_test cryptalg_test_big birthday_attack_test double_cryptalg_test double_cipher_attack_test
+
+test_file_big:
+	@if [ -f $(value TEST_BIG_FILESIZE)$(value TEST_CLEARI_FILE) ]; then \
+		echo "Big file exists. Skipping create..."; \
+	else \
+		echo "Creating big file"; \
+		$(DD) if=/dev/urandom of=$(value TEST_BIG_FILESIZE)$(value TEST_CLEARI_FILE) bs=$(value TEST_BIG_FILESIZE)M count=1 2> /dev/null ; \
+	fi
+	@$(CP) $(value TEST_BIG_FILESIZE)$(value TEST_CLEARI_FILE) $(value TEST_BIG_FILESIZE)$(value TEST_CLEARO_FILE)
+	@$(CKSUM) $(CKSUM_FLAGS) $(value TEST_BIG_FILESIZE)$(value TEST_CLEARI_FILE) $(value TEST_BIG_FILESIZE)$(value TEST_CLEARO_FILE) >> $(CKSUM_DB)
+	@echo ' '
 
 test_files:
 	@echo 'Removing old checksum database: $(CKSUM_DB)'

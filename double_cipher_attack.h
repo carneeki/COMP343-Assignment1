@@ -22,40 +22,6 @@
 using namespace std;
 
 /**
- * lr_pair
- * A pairing of a cryptogram or message (left+right parts) to form an index for
- * mapping either messages or cryptograms with key_pairs
- */
-struct lr_pair
-{
-    uint8_t l; // left part
-    uint8_t r; // right part
-
-    bool operator==( const lr_pair &other ) const
-    {
-      return ( ( l == other.l ) && ( r == other.r ) );
-    }/* operator== */
-
-    bool operator<( const lr_pair &other ) const
-    {
-      if( l < other.l )
-        return true;
-      else if( ( l == other.l ) && ( r < other.r ) )
-        return true;
-      else
-        return false;
-    } /* operator< */
-
-    friend std::ostream& operator<<( ostream &os, const lr_pair &lr )
-    {
-      os << "0x" << setfill( '0' ) << setw( 2 ) << hex << (int) lr.l
-         << " "
-         << "0x" << setfill( '0' ) << setw( 2 ) << hex << (int) lr.r;
-      return os;
-    } /* operator<< */
-};
-
-/**
  * observation
  * container of message and cryptogram of 16 bit length
  */
@@ -89,13 +55,7 @@ struct table_idx
 
     bool operator==( const table_idx &other ) const
     {
-      if( ( v1 == other.v1 ) && ( v2 == other.v2 ) )
-        return true;
-      else if( ( v1.l == other.v1.l ) || ( v2.l == other.v2.l )
-               || ( v1.r == other.v1.r ) || ( v2.r == other.v2.r ) )
-        return true;
-      else
-        return false;
+      return ( ( v1 == other.v1 ) && ( v2 == other.v2 ) );
     } /* operator== */
 
     bool operator<( const table_idx &other ) const
@@ -114,34 +74,6 @@ struct table_idx
       return os;
     } /* operator<< */
 }; /* struct table_idx */
-
-/**
- * key_pair
- * Hold 2 keys, k1 and k2 together
- */
-struct key_pair
-{
-    uint16_t k1; // key 1
-    uint16_t k2; // key 2
-
-    bool operator<( const key_pair &kp ) const
-    {
-      if( k1 < kp.k1 )
-        return true;
-      else if( ( k1 == kp.k1 ) && ( k2 < kp.k2 ) )
-        return true;
-      else
-        return false;
-    } /* operator< */
-
-    friend ostream& operator<<( ostream &os, const key_pair &kp )
-    {
-      os << "0x" << setfill( '0' ) << setw( 4 ) << hex << (long int) kp.k1
-         << " " << "0x" << setfill( '0' ) << setw( 4 ) << hex
-         << (long int) kp.k2;
-      return os;
-    } /* operator<< */
-}; /* struct key_pair */
 
 /**
  * Encrypt observations using unknown random keys from known input messages

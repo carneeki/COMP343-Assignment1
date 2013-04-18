@@ -64,7 +64,7 @@ int main( int argc, char* argv[] );
  * @param Ri
  * @param key_lut[][]
  */
-void multi_feistel( uint8_t (&Li), uint8_t (&Ri),
+void multi_feistel( uint8_t (&l), uint8_t (&r),
                     const uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] );
 
 /**
@@ -195,11 +195,11 @@ void help( char* argv[] )
   return;
 } /* help() */
 
-void multi_feistel( uint8_t (&Li), uint8_t (&Ri),
+void multi_feistel( uint8_t (&l), uint8_t (&r),
                     const uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
 {
   for( int i = 0; i < CRYPTO_ROUNDS; i++ )
-    feistel( 0, Li, Ri, key_lut[i] );
+    feistel( 0, l, r, key_lut[i] );
 } /* multi_feistel() */
 
 void multi_keyreverse(

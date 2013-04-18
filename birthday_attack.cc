@@ -53,14 +53,13 @@ int main( int argc, char* argv[] )
   /**
    * Store hash as h=(m,c) where m = message and c = chaining variable
    */
-  map<uint16_t, input_pair> hash_map;
-  map<uint16_t, input_pair>::iterator iter;
-  input_pair hash_input;
+  map<uint16_t, key_pair> hash_map;
+  map<uint16_t, key_pair>::iterator iter;
+  key_pair hash_input;
 
   uint16_t hash;  // combined hash
 
-  uint8_t l;  // left message
-  uint8_t r;  // right message
+  lr_pair input;
 
   uint16_t key_lut[FEISTEL_ROUNDS]; // key lookup table
 
@@ -73,25 +72,25 @@ int main( int argc, char* argv[] )
     // clear hash from previous iteration
     hash = 0;
 
-    hash_input.c = rand();
-    l = rand();
-    r = rand();
+    hash_input.k2 = rand();
+    input.l = rand();
+    input.r = rand();
 
     // generate key schedule for new key
-    keysched( 0, hash_input.c, key_lut );
+    keysched( 0, hash_input.k2, key_lut );
 
 
-    hash_input.m = l; // combine left and right parts of message (2*8bits)
-    hash_input.m = ( hash_input.m << 8 ) | r;
+    hash_input.k1 = input.l; // combine left and right parts of message (2*8bits)
+    hash_input.k1 = ( hash_input.k1 << 8 ) | input.r;
 
     // create the hash
-    feistel( 0, l, r, key_lut );
+    feistel( 0, input.l, input.r, key_lut );
 
     // combine left and right parts
-    hash = l;
-    hash = ( hash << 8 ) | r;
+    hash = input.l;
+    hash = ( hash << 8 ) | input.r;
 
-    _D( fprintf(stderr, "%04x=(%04x,%04x)\n", hash, hash_input.c, hash_input.m); )
+    _D( fprintf(stderr, "%04x=(%04x,%04x)\n", hash, hash_input.k2, hash_input.k1); )
 
     // check for a collision:
     iter = hash_map.find( hash );
@@ -99,10 +98,11 @@ int main( int argc, char* argv[] )
     {
       // collision detected, print output then exit
       fprintf( stdout, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision\n",
-               iter->second.m, iter->second.c, hash_input.m, hash_input.c );
+               iter->second.k1, iter->second.k2, hash_input.k1, hash_input.k2 );
 
       _D(
-          fprintf(stderr, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision on hash:0x%04x\n", iter->second.m, iter->second.c, hash_input.m, hash_input.c, hash);
+          fprintf(stderr, "0x%04x\t0x%04x\n0x%04x\t0x%04x\ncollision on hash:0x%04x\n",
+                  iter->second.k1, iter->second.k2, hash_input.k1, hash_input.k2, hash);
           fprintf(stderr, "size of hash_map %ld\n", hash_map.size());
       );
 

@@ -48,11 +48,6 @@ int main( int argc, char* argv[] )
    */
   uint16_t starting_key;
 
-  /**
-   * buf[BLOCK_SIZE]
-   * An buffer for bytes read as they get encrypted / decrypted via
-   * encrypt() or decrypt() methods.
-   */
   uint8_t buf[BLOCK_SIZE];
 
   _D( unsigned long cur_block; // current buffer iterator
