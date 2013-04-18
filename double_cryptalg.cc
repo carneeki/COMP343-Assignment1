@@ -1,29 +1,17 @@
 /*
  * double_cryptalg.cc
+ *  Created on: 13/04/2013
+ *      Author: Adam Carmichael
+ *         SID: 41963539
  *
- *  Created on: 31/03/2013
- *      Author: carneeki
+ * Please read the README file for instructions on using make if
+ * standard build is not working.
  */
-
-#include <iostream>
-#include <stdint.h> // uint16_t  - 16 bit unsigned int.
-#include <stdlib.h> // strtoul() - string to unsigned long.
-#include <fstream>  // ifstream
-#include <map>      // map
-#include <ctime>    // time
-/*
- * Please read the function prototypes in cryptalg.h for descriptions of each
- * function.
- */
-#if DEBUG
-#include <iostream>
-#include <bitset>
-#endif
-
-#include "double_cryptalg.h"
-#include "helpers.h"
-
 using namespace std;
+
+#include "globals.h"
+#include "helpers.h"
+#include "double_cryptalg.h"
 
 int main( int argc, char* argv[] )
 {
@@ -51,8 +39,8 @@ int main( int argc, char* argv[] )
    * to be encrypted). All key rounds are generated prior to a call to feistel()
    * so they are available for immediate use.
    */
-  uint16_t ekey_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS]; // temporary key lookup table
-  uint16_t dkey_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS]; // key lookup table
+  uint16_t ekey_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS]; // encrypt key LUT
+  uint16_t dkey_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS]; // decrypt key LUT
 
   /**
    * starting_key
@@ -80,8 +68,17 @@ int main( int argc, char* argv[] )
     multi_keyreverse(ekey_lut,dkey_lut);
   }
 
-  _D( fprintf(stderr, "EKey schedule:\n"); for(int i=0; i < CRYPTO_ROUNDS; i++) { for( int j = 0; j < FEISTEL_ROUNDS; j++ ) { fprintf(stderr,"ekey_lut[%d][%d] = %02x\n",i,j,ekey_lut[i][j]); } } );
-  _D( fprintf(stderr, "DKey schedule:\n"); for(int i=0; i < CRYPTO_ROUNDS; i++) { for( int j = 0; j < FEISTEL_ROUNDS; j++ ) { fprintf(stderr,"dkey_lut[%d][%d] = %02x\n",i,j,dkey_lut[i][j]); } } );
+  /* debug print key schedules */
+  _D(
+      fprintf(stderr, "EKey schedule:\n");
+      for(int i=0; i < CRYPTO_ROUNDS; i++)
+        for( int j = 0; j < FEISTEL_ROUNDS; j++ )
+          fprintf(stderr,"ekey_lut[%d][%d] = %02x\n",i,j,ekey_lut[i][j]);
+      fprintf(stderr, "DKey schedule:\n");
+      for(int i=0; i < CRYPTO_ROUNDS; i++)
+        for( int j = 0; j < FEISTEL_ROUNDS; j++ )
+          fprintf(stderr,"dkey_lut[%d][%d] = %02x\n",i,j,dkey_lut[i][j]);
+  ); /* _D() */
 
   /* read input file block by block to conserve memory for large files
    * (entire program consumes approx 15k of RAM even if using 2byte or 1GB input
@@ -89,18 +86,30 @@ int main( int argc, char* argv[] )
    */
   while( in.read( (char*) buf, BLOCK_SIZE ) )
   {
-    _D( fprintf(stderr, "********** main(): in  block[0x%04lx] *******************************************\n",cur_block); fprintf(stderr, "main(): in  block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_in(buf[0]); bitset<8> r_in(buf[1]); cout << " " << l_in << " : " << r_in << endl; )
+    _D(
+        fprintf(stderr,
+                "********** main(): in  block[0x%04lx] *******************************************\n",
+                cur_block);
+        fprintf(stderr, "main(): in  block[0x%04lx] 0x%02x%02x", cur_block,
+                buf[0], buf[1]);
+        bitset<8> l_in(buf[0]);
+        bitset<8> r_in(buf[1]);
+        cout << " " << l_in << " : " << r_in << endl;
+    ); /* _D() */
+
     if( mode )
-    {
-      // encrypt
       multi_feistel( buf[0], buf[1], ekey_lut );
-    }
     else
-    {
-      // decrypt
       multi_feistel( buf[1], buf[0], dkey_lut );
-    }
-    _D( fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x", cur_block, buf[0], buf[1]); bitset<8> l_out(buf[0]); bitset<8> r_out(buf[1]); cout << " " << l_out << " : " << r_out << endl; cur_block++; )
+
+    _D(
+        fprintf(stderr, "main(): out block[0x%04lx] 0x%02x%02x", cur_block,
+                buf[0], buf[1]);
+        bitset<8> l_out(buf[0]);
+        bitset<8> r_out(buf[1]);
+        cout << " " << l_out << " : " << r_out << endl;
+        cur_block++;
+    ); /* _D() */
 
     out.write( (char*) buf, BLOCK_SIZE );
   }

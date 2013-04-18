@@ -1,23 +1,16 @@
 /*
  * cryptalg.cc
- *
  *  Created on: 31/03/2013
- *      Author: carneeki
+ *      Author: Adam Carmichael
+ *         SID: 41963539
+ *
+ * Please read the README file for instructions on using make if
+ * standard build is not working.
  */
-
-#include <stdint.h> // uint16_t  - 16 bit unsigned int.
-#include <stdlib.h> // strtoul() - string to unsigned long.
-#include <fstream>  // ifstream
-#if DEBUG
-#include <iostream>
-#include <bitset>
-#endif
-
-/*
- * User defined functions. Please read prototypes included for explanations.
- */
-#include "cryptalg.h"
+using namespace std;
+#include "globals.h"
 #include "helpers.h"
+#include "cryptalg.h"
 
 int main( int argc, char* argv[] )
 {
@@ -68,7 +61,7 @@ int main( int argc, char* argv[] )
   // mode to determine if we are encrypting / decrypting, assigned by _init()
   bool mode;
 
-  _init( argc, argv, in, out, starting_key, ekey_lut, mode );
+  init( argc, argv, in, out, starting_key, ekey_lut, mode );
 
   if(!mode)
   {
@@ -116,4 +109,102 @@ int main( int argc, char* argv[] )
 
   _D( fprintf(stderr, "          main(): ending\n"); )
   return 0;
+}
+
+bool init( int argc, char* argv[], fstream &in, ofstream &out,
+            uint16_t &starting_key, uint16_t (&key_lut)[FEISTEL_ROUNDS],
+            bool &mode )
+{
+
+  _D( fprintf(stdout, "         _init(): starting\n"); )
+
+// Show a friendly help message
+  if( argc != 5 )
+  {
+    help( argv );
+  }
+
+  char *strin;           // relative path to input file
+  char *strout;          // relative path to output file
+  char *oper;            // operation: E = encrypt / D = decrypt
+  unsigned long inlen;   // input file length
+
+  strin = argv[1];
+  strout = argv[2];
+  starting_key = (uint16_t) strtoul( argv[3], NULL, 0 );
+  oper = argv[4];
+
+  in.open( strin, ios::binary | ios::in | ios::out | ios::ate );
+  out.open( strout, ios::binary | ios::out | ios::trunc );
+
+// do sanity checks on files now
+  if( !in.good() )
+  {
+    fprintf( stderr, "FATAL: input file %s could not be opened. Quitting.\n",
+             strin );
+    exit( EXIT_FAILURE );
+  }
+  if( !out.good() )
+  {
+    fprintf( stderr, "FATAL: input file %s could not be opened. Quitting.\n",
+             strin );
+    exit( EXIT_FAILURE );
+  }
+
+  if( ( inlen = in.tellg() ) == 0 )
+  {
+    // empty file
+    fprintf( stderr, "FATAL: input file %s is empty. Quitting.\n", strin );
+    exit( EXIT_FAILURE );
+  }
+
+// assume input files are openable
+  if( ( *oper == 'E' ) || ( *oper == 'e' ) )
+  {
+    mode = 1;
+
+    // check length of input for odd number bytes, pad to even
+    if( ( inlen % 2 ) == 1 )
+    {
+
+      _D( fprintf(stdout, "         _init(): in length has odd number bytes (%ld). Appending a zero.\n", inlen); )
+
+      in.seekp( inlen );
+      in.write( "\0", 1 );
+      in.flush();
+    }
+  }
+  else if( ( *oper == 'D' ) || ( *oper == 'd' ) )
+  {
+    mode = 0;
+
+    // check length of input for odd number bytes, abort if odd number (bad data)
+    if( ( inlen % 2 ) == 1 )
+    {
+      fprintf(
+          stderr,
+          "FATAL: cannot decrypt input file %s with odd number of bytes %ld\n",
+          strin, inlen );
+    }
+  }
+  else
+  {
+    help( argv );
+    exit( EXIT_FAILURE );
+  }
+
+  in.seekp( in.beg ); // ensure pointers are definitely at START of file.
+  in.seekg( in.beg );
+
+  _D( fprintf(stdout, "         _init():  in: %s \n                  out: %s\n                  key: 0x%04x rounds: %d mode: %s \n", strin, strout, starting_key, FEISTEL_ROUNDS, oper); )
+
+  keysched( 0, starting_key, key_lut );
+
+  return mode;
+}
+
+void help( char* argv[] )
+{
+  fprintf( stderr, "Usage: %s <in.txt> <out.txt> <key> <E|D>\n", argv[0] );
+  return;
 }

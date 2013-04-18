@@ -1,13 +1,5 @@
 #-include ../makefile.init
 
-RM := rm -rf
-CP := cp
-DD := dd
-CKSUM := sha512sum
-CKSUM_DB = CHECKSUMS.SHA512
-CKSUM_FLAGS = -b
-CKSUM_CKFLAGS = --check
-
 TEST_CLEARI_FILE = m.clearI.dd
 TEST_CLEARO_FILE = m.clearO.dd
 TEST_CRYPT_FILE = m.crypt.dd
@@ -44,7 +36,7 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: birthday_attack cryptalg
+all: birthday_attack cryptalg double_cipher_attack double_cryptalg
 
 sample_birthday: sample_birthday.o
 	@echo 'Building target: $@'
@@ -77,7 +69,7 @@ birthday_attack.o:
 birthday_attack_test: birthday_attack
 	@echo 'Running binary: ./birthday_attack'
 	./birthday_attack
-	echo 'Done! '
+	echo ' '
 	
 cryptalg: cryptalg.o
 	@echo 'Building target: $@'
@@ -125,7 +117,7 @@ double_cryptalg_test: double_cryptalg test_files
 		./double_cryptalg $(MB)$(value TEST_CRYPT_FILE) $(MB)$(value TEST_CLEARO_FILE) $(value TEST_DOUBLE_KEY) D;\
 	)
 	@$(CKSUM) $(CKSUM_CKFLAGS) $(CKSUM_DB);\
-	echo 'Done! '
+	echo ' '
 
 double_cipher_attack:	double_cipher_attack.o
 	@echo 'Building target: $@'
@@ -142,8 +134,9 @@ double_cipher_attack.o:
 	@echo ' '
 
 double_cipher_attack_test: double_cipher_attack
-	@echo 'TODO!'
-	@echo ' '
+	@echo 'Running binary: ./double_cipher_attack'
+	@ ./double_cipher_attack
+	echo ' '
 
 # Other Targets
 clean:
@@ -157,10 +150,11 @@ clean:
 		*$(value TEST_CLEARI_FILE)* \
 		*$(value TEST_CLEARO_FILE)* \
 		*$(value TEST_CRYPT_FILE)* \
-		$(CKSUM_DB)
+		$(CKSUM_DB) \
+		SSH_*
 	-@echo ' '
 
-test_all: cryptalg_test birthday_attack_test double_cryptalg_test double_cipher_attack_test
+test_all: clean cryptalg_test birthday_attack_test double_cryptalg_test double_cipher_attack_test
 
 test_files:
 	@echo 'Removing old checksum database: $(CKSUM_DB)'

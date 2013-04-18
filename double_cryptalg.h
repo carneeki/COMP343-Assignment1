@@ -1,33 +1,57 @@
 /*
  * double_cryptalg.h
- *
  *  Created on: 14/04/2013
- *      Author: carneeki
+ *      Author: Adam Carmichael
+ *         SID: 41963539
+ *
+ * Please read the README file for instructions on using make if
+ * standard build is not working.
  */
-
 #ifndef DOUBLE_CRYPTALG_H_
 #define DOUBLE_CRYPTALG_H_
+
+#ifndef GLOBALS_H_
+#include "globals.h"
+#endif
 
 #ifndef HELPERS_H_
 #include "helpers.h"
 #endif
 
-#ifndef CRYPTALG_H_
-#include "cryptalg.h"
-#endif
-
-#include <stdlib.h> // strtoul() - string to unsigned long.
-#include <fstream>  // ifstream
 /**
- * CRYPTO_ROUNDS
- * Number of rounds to execute the whole encryption / decryption algorithm.
+ * double_init
+ * Set up and sanitize variables as per spec, but create multiple key look up
+ * tables for each cryptographic round to be executed (two per spec).
+ * @see init
+ * @param argc
+ * @param argv
+ * @param in
+ * @param out
+ * @param starting_key
+ * @param key_lut
+ * @param mode
+ * @return mode
  */
-#ifndef CRYPTO_ROUNDS
-#define CRYPTO_ROUNDS 2
-#endif
-/* FEISTEL_ROUNDS */
+bool double_init( int argc, char* argv[], fstream &in, ofstream &out,
+                  uint32_t &starting_key,
+                  uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS],
+                  bool &mode );
+/**
+ * help
+ * Help function to display a message showing user how to use the program.
+ * Returns 1 and terminates execution.
+ * @param argv
+ */
+void help( char* argv[] );
 
-using namespace std;
+/**
+ * main()
+ * Main program block
+ * @param argc Argument count
+ * @param argv Argument values
+ * @return
+ */
+int main( int argc, char* argv[] );
 
 /**
  * multi_feistel
@@ -41,14 +65,7 @@ using namespace std;
  * @param key_lut[][]
  */
 void multi_feistel( uint8_t (&Li), uint8_t (&Ri),
-                    const uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
-{
-  for( int i = 0; i < CRYPTO_ROUNDS; i++ )
-  {
-    _D( fprintf(stderr, "multi_feistel(%d):\n",i); );
-    feistel( 0, Li, Ri, key_lut[i] );
-  }
-}
+                    const uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] );
 
 /**
  * multi_keyreverse
@@ -56,29 +73,20 @@ void multi_feistel( uint8_t (&Li), uint8_t (&Ri),
  * @param ekey_lut LUT for encryption keyschedule
  * @param dkey_lut LUT for decryption keyschedule
  */
-void multi_keyreverse( uint16_t (&ekey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS],
-                       uint16_t (&dkey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
-{
-  // reverse key schedule for decryption
-  for( int i = 0; i < CRYPTO_ROUNDS; i++ )
-    for( int j = 0; j < FEISTEL_ROUNDS; j++ )
-      dkey_lut[abs( i - ( CRYPTO_ROUNDS - 1 ) )][abs(
-          j - ( FEISTEL_ROUNDS - 1 ) )] = ekey_lut[i][j];
-}
+void multi_keyreverse(
+    const uint16_t (&ekey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS],
+    uint16_t (&dkey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] );
 
-/**
- * double_init
- * Set up and sanitize variables as per spec, but create multiple key look up
- * tables for each cryptographic round to be executed (two per spec).
- * @param argc
- * @param argv
- * @param in
- * @param out
- * @param starting_key
- * @param key_lut
- * @param mode
- * @return
- */
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
+// Function definitions below this point.
+//
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 bool double_init( int argc, char* argv[], fstream &in, ofstream &out,
                   uint32_t &starting_key,
                   uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS],
@@ -179,6 +187,30 @@ bool double_init( int argc, char* argv[], fstream &in, ofstream &out,
   }
 
   return mode;
-}
+} /* double_init() */
+
+void help( char* argv[] )
+{
+  fprintf( stderr, "Usage: %s <in.txt> <out.txt> <key> <E|D>\n", argv[0] );
+  return;
+} /* help() */
+
+void multi_feistel( uint8_t (&Li), uint8_t (&Ri),
+                    const uint16_t (&key_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
+{
+  for( int i = 0; i < CRYPTO_ROUNDS; i++ )
+    feistel( 0, Li, Ri, key_lut[i] );
+} /* multi_feistel() */
+
+void multi_keyreverse(
+    const uint16_t (&ekey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS],
+    uint16_t (&dkey_lut)[CRYPTO_ROUNDS][FEISTEL_ROUNDS] )
+{
+  // reverse key schedule for decryption
+  for( int i = 0; i < CRYPTO_ROUNDS; i++ )
+    for( int j = 0; j < FEISTEL_ROUNDS; j++ )
+      dkey_lut[abs( i - ( CRYPTO_ROUNDS - 1 ) )][abs(
+          j - ( FEISTEL_ROUNDS - 1 ) )] = ekey_lut[i][j];
+} /* multi_keyreverse */
 
 #endif /* DOUBLE_CRYPTALG_H_ */

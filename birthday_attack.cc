@@ -1,38 +1,16 @@
 /*
  * birthday_attack.cc
- *
  *  Created on: 31/03/2013
- *      Author: carneeki
+ *      Author: Adam Carmichael
+ *         SID: 41963539
+ *
+ * Please read the README file for instructions on using make if
+ * standard build is not working.
  */
-
-#include <iostream>
-#include <stdint.h> // uint16_t  - 16 bit unsigned int.
-#include <stdlib.h> // strtoul() - string to unsigned long.
-#include <fstream>  // ifstream
-#include <map>      // map
-#include <ctime>    // time
-/*
- * Please read the function prototypes in cryptalg.h for descriptions of each
- * function.
- */
-#if DEBUG
-#include <iostream>
-#include <bitset>
-#endif
-
-#include "cryptalg.h"
-#include "helpers.h"
-
 using namespace std;
-
-/**
- * Store chaining variable and message
- */
-struct input_pair
-{
-    uint16_t m; // message
-    uint16_t c; // chain variable
-};
+#include "globals.h"
+#include "helpers.h"
+#include "birthday_attack.h"
 
 /* Iterate every possible message (2^16) inside an iteration of every possible
  * chaining variable (2^16). This gives a total of 2^32 combinations, a 32 bit
@@ -88,6 +66,8 @@ int main( int argc, char* argv[] )
 
   srand( time( 0 ) ); // initialize random seed.
 
+  // keep looping until a return() call breaks execution
+  //     * or we run out of memory, and swap space
   while( true )
   {
     // clear hash from previous iteration
@@ -128,14 +108,14 @@ int main( int argc, char* argv[] )
 
       // exit
       return 0;
-    }
+    } /* if( iter != hash_map.end() ) */
 
     // no collision: store the node in the hash map
     hash_map[hash] = hash_input;
-  }
+  } /* while( true ) */
 
   // technically this code should be unreachable, but if it does, print
   // to error output and return a non-zero
   fprintf( stderr, "No collisions found\n" );
   return 1;
-}
+} /* main() */
