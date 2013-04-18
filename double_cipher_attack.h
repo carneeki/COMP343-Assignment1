@@ -73,6 +73,10 @@ struct observation
 {
     lr_pair m; // msg
     lr_pair c; // cryptogram
+    bool operator==(const observation &other) const
+    {
+      return ((m == other.m) && (c == other.m));
+    }
     friend ostream& operator<<( ostream &os, const observation &ob )
     {
       os << ob.m << " " << ob.c;
@@ -97,8 +101,8 @@ struct table_idx
       {
         return true;
       }
-      else if ((v1.l == other.v1.l) || (v2.l == other.v2.l)
-          || (v1.r == other.v1.r) || (v2.r == other.v2.r) )
+      else if( ( v1.l == other.v1.l ) || ( v2.l == other.v2.l )
+               || ( v1.r == other.v1.r ) || ( v2.r == other.v2.r ) )
       {
         return true;
       }
@@ -149,7 +153,7 @@ struct key_pair
     friend ostream& operator<<( ostream &os, const key_pair &kp )
     {
       os << "0x" << setfill( '0' ) << setw( 4 ) << hex << (long int) kp.k1
-         << ", " << "0x" << setfill( '0' ) << setw( 4 ) << hex
+         << " " << "0x" << setfill( '0' ) << setw( 4 ) << hex
          << (long int) kp.k2;
       return os;
     }
@@ -162,17 +166,26 @@ struct key_pair
 void encrypt_observations( observation (&ob)[CRYPTO_ROUNDS] )
 {
   uint16_t s_key[CRYPTO_ROUNDS];
-  uint16_t key_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS];
+  uint16_t ekey_lut[CRYPTO_ROUNDS][FEISTEL_ROUNDS];
 
-  srand( time( 0 ) );
   for( int i = 0; i < CRYPTO_ROUNDS; i++ )
   {
     s_key[i] = rand();
-    fprintf( stdout, "Starting key (ssh! don't tell main()!) [%d] = %04x\n", i,
+
+    _D(
+      s_key[0] = 0xFEED;
+      s_key[1] = 0xCAFE;
+    );
+    fprintf( stdout,
+             "Starting key (ssh! don't tell main()!) [%d] = 0x%04x\n", i,
              s_key[i] );
-    keysched( 0, s_key[i], key_lut[i] );
-    multi_feistel( ob[i].m.l, ob[i].m.r, key_lut );
+    keysched( 0, s_key[i], ekey_lut[i] );
   }
+
+  // need the same loop a second time because key generation is not
+  // complete until all loops are completed above
+  for( int i = 0; i < CRYPTO_ROUNDS; i++ )
+    multi_feistel( ob[i].c.l, ob[i].c.r, ekey_lut );
 }
 
 /**
@@ -185,7 +198,14 @@ void generate_observations( observation (&ob)[CRYPTO_ROUNDS] )
     ob[i].m.l = rand();
     ob[i].m.r = rand();
 
-    // copy the messag to the cryptogram space so multi_feistels does not
+    _D(
+      ob[0].m.l = 0x41;
+      ob[0].m.r = 0x44;
+      ob[1].m.l = 0x41;
+      ob[1].m.r = 0x4d;
+    );
+
+    // copy the message to the cryptogram space so multi_feistels does not
     // clobber them in the pass by reference
     ob[i].c = ob[i].m;
   }
@@ -202,13 +222,12 @@ void multimap_intersect( const multimap<table_idx, uint16_t> &T_e,
 
   for( it_e = T_e.begin(); it_e != T_e.end(); ++it_e )
   {
-//    cout << "iterating it_e: " << it_e->first << endl;
     for( it_d = T_d.equal_range( it_e->first ).first;
-         it_d!= T_d.equal_range( it_e->first ).second; ++it_d )
+        it_d != T_d.equal_range( it_e->first ).second; ++it_d )
     {
       // if it_d idx matches it_e idx, add to T_k
-      cout << "iterating it_e:it_d " << it_e->first << " : " << it_d->first
-           << endl;
+      //cout << "iterating it_e:it_d " << it_e->first << " : " << it_d->first
+      //     << endl;
       if( it_e->first == it_d->first )
       {
         kp.k1 = it_e->second;
@@ -224,7 +243,7 @@ void keypair_print( const multimap<table_idx, key_pair> &T_k )
   multimap<table_idx, key_pair>::const_iterator it_k; // iterator T_k
   for( it_k = T_k.begin(); it_k != T_k.end(); ++it_k )
   {
-    cout << "k1,k2 " << it_k->second << endl;
+    cout << "table_idx k1,k2 : " << it_k->first << " " << it_k->second << endl;
   }
 }
 

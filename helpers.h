@@ -119,7 +119,7 @@ void keysched( uint8_t round, const uint16_t &starting_key,
                uint16_t (&key_lut)[FEISTEL_ROUNDS] )
 {
 
-  _D( fprintf(stdout, "     keysched(%d): starting", round); )
+  _D( fprintf(stdout, "     keysched(%d): starting", round); );
 
 // check we are not generating too many keys
   if( round == FEISTEL_ROUNDS )
@@ -140,7 +140,8 @@ void keysched( uint8_t round, const uint16_t &starting_key,
     key_lut[round] = rol( 3, key_lut[round - 1] )
         ^ rol( 5, key_lut[round - 2] );
   }
-  _D( fprintf(stdout, " : key_lut[%d] = 0x%02x\n", round, key_lut[round]); )
+
+  _D( fprintf(stdout, " : key_lut[%d] = 0x%02x\n", round, key_lut[round]); );
 
 // call recursively, but not too many times
   if( round + 1 < FEISTEL_ROUNDS )
