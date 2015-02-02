@@ -5,14 +5,15 @@
 # Author: Adam Carmichael <carneeki@carneeki.net>
 #    SID: 4196 3539
 #
+#  Grade: 200 out of 150 (bonus section)
 ##############################################################################
 
 Table of Contents:
   Project Layout
   Makefile Instructions
   Build Environment & Requirements
-  
-##############################################################################  
+
+##############################################################################
 # Project Layout
 ##############################################################################
 The project exists with all source files existing in the project root, as well
@@ -47,7 +48,7 @@ as makefile includes that are required for building binaries and test cases.
 ├── .projects               -  "    "    "    "    "
 └── .settings               -  "    "    "    "    "
 
-##############################################################################  
+##############################################################################
 # Makefile Instructions
 ##############################################################################
 make all           - Make all targets except for test cases
